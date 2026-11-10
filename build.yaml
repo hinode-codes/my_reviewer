@@ -1,0 +1,12 @@
+targets:
+  $default:
+    builders:
+      # 1. Slang Translations Generator
+      slang_build_runner:
+        options:
+          base_locale: en
+          namespaces: true
+          main_namespace: common
+          string_interpolation: braces
+          output_directory: lib/src/gen
+          output_file_name: strings.g.dart

@@ -1,0 +1,77 @@
+{
+    "main": {
+        "title": "Documents",
+        "fab": "Scan a document",
+        "noDocs": "No documents found. Tap the button below to scan a document.",
+        "snapshotError": "Snapshot error: {error}",
+        "documentCount": {
+            "zero": "No documents",
+            "one": "1 document",
+            "other": "{n} documents"
+        }
+    },
+    "selection": {
+        "selectedLabel": "{count} / {total}",
+        "cancelTooltip": "Cancel selection mode.",
+        "deselectAllTooltip": "Deselect all documents.",
+        "selectAllTooltip": "Select all documents.",
+        "deleteTooltip": "Delete selected documents.",
+        "enterSelectionTooltip": "Enter selection mode.",
+        "deleteConfirmTitle": "Delete {n} document(s)?",
+        "deleteConfirmMessage": "Are you sure you want to delete the selected document(s)?",
+        "cancelButton": "Cancel",
+        "deleteButton": "Delete",
+        "delete": {
+            "deletingFiles": "Deleting document(s)... {current} / {total}",
+            "done": "Document(s) deleted successfully.",
+            "failed": "Failed to delete document(s).",
+            "closeAction": "Okay",
+            "retryAction": "Try to Delete Again",
+            "preparing": "Preparing to delete document(s)...",
+            "finishing": "Finishing up..."
+        }
+    },
+    "scan": {
+        "title": "Scan Document",
+        "noDocsCaptured": "No documents captured.",
+        "noDocsRetry": "Scan new documents",
+        "preview": {
+            "title": "{current} / {total}",
+            "delete": "Delete",
+            "scanMore": "Scan More",
+            "save": "Save",
+            "bottomBar": {
+                "addTooltip": "Scan more documents.",
+                "deleteTooltip": "Delete current document.",
+                "groupTooltip": "Show all documents.",
+                "groupButton": "Show Group ({count})"
+            },
+            "docNameLabel": "Document Name",
+            "docNamePlaceholder": "Enter Document Name",
+            "docNameError": "Document name cannot be empty.",
+            "bottomSheet": {
+                "title": "Group Details",
+                "groupNameLabel": "Group Name",
+                "groupNamePlaceholder": "Enter Group Name",
+                "groupNameError": "Group name cannot be empty."
+            }
+        },
+        "save": {
+            "failed": "Failed to save document(s).",
+            "done": "Document(s) saved successfully.",
+            "preparing": "Preparing to save document(s)...",
+            "savingFiles": "Saving document(s)... {current} / {total}",
+            "finishing": "Finishing up...",
+            "backAction": "Proceed to Exit",
+            "closeAction": "Okay",
+            "retryAction": "Try to Save Again"
+        },
+        "discard": {
+            "title": "Exiting Document Scanner",
+            "message": "Unsaved documents are about to be discarded. Are you sure you want to continue? You can save them before exiting.",
+            "confirm": "Exit & Discard",
+            "cancel": "Cancel",
+            "save": "Save & Exit"
+        }
+    }
+}

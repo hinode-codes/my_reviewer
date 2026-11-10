@@ -1,0 +1,8 @@
+{
+    "title": "My Reviewer",
+    "bottomNavbar": {
+        "documents": "Documents",
+        "flashcards": "Flashcards",
+        "settings": "Settings"
+    }
+}
