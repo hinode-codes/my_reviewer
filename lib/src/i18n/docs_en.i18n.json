@@ -10,36 +10,25 @@
             "other": "{n} documents"
         }
     },
-    "selection": {
-        "selectedLabel": "{count} / {total}",
-        "cancelTooltip": "Cancel selection mode.",
-        "deselectAllTooltip": "Deselect all documents.",
-        "selectAllTooltip": "Select all documents.",
-        "deleteTooltip": "Delete selected documents.",
-        "enterSelectionTooltip": "Enter selection mode.",
-        "deleteConfirmTitle": "Delete {n} document(s)?",
-        "deleteConfirmMessage": "Are you sure you want to delete the selected document(s)?",
-        "cancelButton": "Cancel",
-        "deleteButton": "Delete",
-        "delete": {
-            "deletingFiles": "Deleting document(s)... {current} / {total}",
-            "done": "Document(s) deleted successfully.",
-            "failed": "Failed to delete document(s).",
-            "closeAction": "Okay",
-            "retryAction": "Try to Delete Again",
-            "preparing": "Preparing to delete document(s)...",
-            "finishing": "Finishing up..."
-        }
+    "detail": {
+        "edit": {
+            "tooltip": "Edit this document group",
+            "label": "Edit Group"
+        },
+        "noDocs": "No documents found in this group."
     },
     "scan": {
         "title": "Scan Document",
         "noDocsCaptured": "No documents captured.",
         "noDocsRetry": "Scan new documents",
         "preview": {
+            "emptyTitle": "Scanned Documents",
             "title": "{current} / {total}",
             "delete": "Delete",
             "scanMore": "Scan More",
             "save": "Save",
+            "addLabel": "Scan More",
+            "addTooltip": "Scan more documents.",
             "bottomBar": {
                 "addTooltip": "Scan more documents.",
                 "deleteTooltip": "Delete current document.",

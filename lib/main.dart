@@ -1,8 +1,9 @@
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:my_reviewer/src/controllers/settings_controller.dart';
 import 'package:my_reviewer/src/gen/strings.g.dart';
 import 'package:my_reviewer/src/locator.dart';
-import 'package:my_reviewer/src/routes/app_router.dart';
+import 'package:my_reviewer/src/routes.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -35,7 +36,13 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
       ),
-      routerConfig: createRouter(),
+      routerConfig: GoRouter(
+        navigatorKey: rootNavigatorKey,
+        debugLogDiagnostics: true,
+        initialLocation: DocsRouteData().location,
+        routes: $appRoutes,
+      ),
     );
   }
 }
+

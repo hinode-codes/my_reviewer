@@ -6,18 +6,9 @@
 
 #include "generated_plugin_registrant.h"
 
-#include <connectivity_plus/connectivity_plus_windows_plugin.h>
-#include <flutter_edge_ai/flutter_edge_ai_plugin.h>
-#include <flutter_local_ai/flutter_local_ai_plugin.h>
 #include <permission_handler_windows/permission_handler_windows_plugin.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
-  ConnectivityPlusWindowsPluginRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("ConnectivityPlusWindowsPlugin"));
-  FlutterEdgeAiPluginRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("FlutterEdgeAiPlugin"));
-  FlutterLocalAiPluginRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("FlutterLocalAiPlugin"));
   PermissionHandlerWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("PermissionHandlerWindowsPlugin"));
 }

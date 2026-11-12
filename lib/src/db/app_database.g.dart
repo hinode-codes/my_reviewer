@@ -32,17 +32,6 @@ class $ScannedDocumentsGroupsTable extends ScannedDocumentsGroups
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
-    'deletedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
-    'deleted_at',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
@@ -88,31 +77,14 @@ class $ScannedDocumentsGroupsTable extends ScannedDocumentsGroups
         type: DriftSqlType.string,
         requiredDuringInsert: true,
       );
-  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
-    'isDeleted',
-  );
-  @override
-  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
-    'is_deleted',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_deleted" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
   @override
   List<GeneratedColumn> get $columns => [
     createdAt,
     updatedAt,
-    deletedAt,
     id,
     name,
     relativeFolderPath,
     absoluteFolderPath,
-    isDeleted,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -136,12 +108,6 @@ class $ScannedDocumentsGroupsTable extends ScannedDocumentsGroups
       context.handle(
         _updatedAtMeta,
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    }
-    if (data.containsKey('deleted_at')) {
-      context.handle(
-        _deletedAtMeta,
-        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
       );
     }
     if (data.containsKey('id')) {
@@ -177,12 +143,6 @@ class $ScannedDocumentsGroupsTable extends ScannedDocumentsGroups
     } else if (isInserting) {
       context.missing(_absoluteFolderPathMeta);
     }
-    if (data.containsKey('is_deleted')) {
-      context.handle(
-        _isDeletedMeta,
-        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
-      );
-    }
     return context;
   }
 
@@ -200,10 +160,6 @@ class $ScannedDocumentsGroupsTable extends ScannedDocumentsGroups
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       ),
-      deletedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}deleted_at'],
-      ),
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -220,10 +176,6 @@ class $ScannedDocumentsGroupsTable extends ScannedDocumentsGroups
         DriftSqlType.string,
         data['${effectivePrefix}absolute_folder_path'],
       )!,
-      isDeleted: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_deleted'],
-      )!,
     );
   }
 
@@ -237,21 +189,17 @@ class ScannedDocumentsGroup extends DataClass
     implements Insertable<ScannedDocumentsGroup> {
   final DateTime createdAt;
   final DateTime? updatedAt;
-  final DateTime? deletedAt;
   final String id;
   final String name;
   final String relativeFolderPath;
   final String absoluteFolderPath;
-  final bool isDeleted;
   const ScannedDocumentsGroup({
     required this.createdAt,
     this.updatedAt,
-    this.deletedAt,
     required this.id,
     required this.name,
     required this.relativeFolderPath,
     required this.absoluteFolderPath,
-    required this.isDeleted,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -260,14 +208,10 @@ class ScannedDocumentsGroup extends DataClass
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<DateTime>(updatedAt);
     }
-    if (!nullToAbsent || deletedAt != null) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt);
-    }
     map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
     map['relative_folder_path'] = Variable<String>(relativeFolderPath);
     map['absolute_folder_path'] = Variable<String>(absoluteFolderPath);
-    map['is_deleted'] = Variable<bool>(isDeleted);
     return map;
   }
 
@@ -277,14 +221,10 @@ class ScannedDocumentsGroup extends DataClass
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(updatedAt),
-      deletedAt: deletedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deletedAt),
       id: Value(id),
       name: Value(name),
       relativeFolderPath: Value(relativeFolderPath),
       absoluteFolderPath: Value(absoluteFolderPath),
-      isDeleted: Value(isDeleted),
     );
   }
 
@@ -296,7 +236,6 @@ class ScannedDocumentsGroup extends DataClass
     return ScannedDocumentsGroup(
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
-      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       relativeFolderPath: serializer.fromJson<String>(
@@ -305,7 +244,6 @@ class ScannedDocumentsGroup extends DataClass
       absoluteFolderPath: serializer.fromJson<String>(
         json['absoluteFolderPath'],
       ),
-      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
     );
   }
   @override
@@ -314,33 +252,27 @@ class ScannedDocumentsGroup extends DataClass
     return <String, dynamic>{
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
-      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
       'relativeFolderPath': serializer.toJson<String>(relativeFolderPath),
       'absoluteFolderPath': serializer.toJson<String>(absoluteFolderPath),
-      'isDeleted': serializer.toJson<bool>(isDeleted),
     };
   }
 
   ScannedDocumentsGroup copyWith({
     DateTime? createdAt,
     Value<DateTime?> updatedAt = const Value.absent(),
-    Value<DateTime?> deletedAt = const Value.absent(),
     String? id,
     String? name,
     String? relativeFolderPath,
     String? absoluteFolderPath,
-    bool? isDeleted,
   }) => ScannedDocumentsGroup(
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
-    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     id: id ?? this.id,
     name: name ?? this.name,
     relativeFolderPath: relativeFolderPath ?? this.relativeFolderPath,
     absoluteFolderPath: absoluteFolderPath ?? this.absoluteFolderPath,
-    isDeleted: isDeleted ?? this.isDeleted,
   );
   ScannedDocumentsGroup copyWithCompanion(
     ScannedDocumentsGroupsCompanion data,
@@ -348,7 +280,6 @@ class ScannedDocumentsGroup extends DataClass
     return ScannedDocumentsGroup(
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       relativeFolderPath: data.relativeFolderPath.present
@@ -357,7 +288,6 @@ class ScannedDocumentsGroup extends DataClass
       absoluteFolderPath: data.absoluteFolderPath.present
           ? data.absoluteFolderPath.value
           : this.absoluteFolderPath,
-      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
     );
   }
 
@@ -366,12 +296,10 @@ class ScannedDocumentsGroup extends DataClass
     return (StringBuffer('ScannedDocumentsGroup(')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt, ')
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('relativeFolderPath: $relativeFolderPath, ')
-          ..write('absoluteFolderPath: $absoluteFolderPath, ')
-          ..write('isDeleted: $isDeleted')
+          ..write('absoluteFolderPath: $absoluteFolderPath')
           ..write(')'))
         .toString();
   }
@@ -380,12 +308,10 @@ class ScannedDocumentsGroup extends DataClass
   int get hashCode => Object.hash(
     createdAt,
     updatedAt,
-    deletedAt,
     id,
     name,
     relativeFolderPath,
     absoluteFolderPath,
-    isDeleted,
   );
   @override
   bool operator ==(Object other) =>
@@ -393,45 +319,37 @@ class ScannedDocumentsGroup extends DataClass
       (other is ScannedDocumentsGroup &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.deletedAt == this.deletedAt &&
           other.id == this.id &&
           other.name == this.name &&
           other.relativeFolderPath == this.relativeFolderPath &&
-          other.absoluteFolderPath == this.absoluteFolderPath &&
-          other.isDeleted == this.isDeleted);
+          other.absoluteFolderPath == this.absoluteFolderPath);
 }
 
 class ScannedDocumentsGroupsCompanion
     extends UpdateCompanion<ScannedDocumentsGroup> {
   final Value<DateTime> createdAt;
   final Value<DateTime?> updatedAt;
-  final Value<DateTime?> deletedAt;
   final Value<String> id;
   final Value<String> name;
   final Value<String> relativeFolderPath;
   final Value<String> absoluteFolderPath;
-  final Value<bool> isDeleted;
   final Value<int> rowid;
   const ScannedDocumentsGroupsCompanion({
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
-    this.deletedAt = const Value.absent(),
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.relativeFolderPath = const Value.absent(),
     this.absoluteFolderPath = const Value.absent(),
-    this.isDeleted = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ScannedDocumentsGroupsCompanion.insert({
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
-    this.deletedAt = const Value.absent(),
     this.id = const Value.absent(),
     required String name,
     required String relativeFolderPath,
     required String absoluteFolderPath,
-    this.isDeleted = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : name = Value(name),
        relativeFolderPath = Value(relativeFolderPath),
@@ -439,25 +357,21 @@ class ScannedDocumentsGroupsCompanion
   static Insertable<ScannedDocumentsGroup> custom({
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
-    Expression<DateTime>? deletedAt,
     Expression<String>? id,
     Expression<String>? name,
     Expression<String>? relativeFolderPath,
     Expression<String>? absoluteFolderPath,
-    Expression<bool>? isDeleted,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
-      if (deletedAt != null) 'deleted_at': deletedAt,
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (relativeFolderPath != null)
         'relative_folder_path': relativeFolderPath,
       if (absoluteFolderPath != null)
         'absolute_folder_path': absoluteFolderPath,
-      if (isDeleted != null) 'is_deleted': isDeleted,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -465,23 +379,19 @@ class ScannedDocumentsGroupsCompanion
   ScannedDocumentsGroupsCompanion copyWith({
     Value<DateTime>? createdAt,
     Value<DateTime?>? updatedAt,
-    Value<DateTime?>? deletedAt,
     Value<String>? id,
     Value<String>? name,
     Value<String>? relativeFolderPath,
     Value<String>? absoluteFolderPath,
-    Value<bool>? isDeleted,
     Value<int>? rowid,
   }) {
     return ScannedDocumentsGroupsCompanion(
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      deletedAt: deletedAt ?? this.deletedAt,
       id: id ?? this.id,
       name: name ?? this.name,
       relativeFolderPath: relativeFolderPath ?? this.relativeFolderPath,
       absoluteFolderPath: absoluteFolderPath ?? this.absoluteFolderPath,
-      isDeleted: isDeleted ?? this.isDeleted,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -495,9 +405,6 @@ class ScannedDocumentsGroupsCompanion
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
-    if (deletedAt.present) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
-    }
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
@@ -510,9 +417,6 @@ class ScannedDocumentsGroupsCompanion
     if (absoluteFolderPath.present) {
       map['absolute_folder_path'] = Variable<String>(absoluteFolderPath.value);
     }
-    if (isDeleted.present) {
-      map['is_deleted'] = Variable<bool>(isDeleted.value);
-    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -524,12 +428,10 @@ class ScannedDocumentsGroupsCompanion
     return (StringBuffer('ScannedDocumentsGroupsCompanion(')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt, ')
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('relativeFolderPath: $relativeFolderPath, ')
           ..write('absoluteFolderPath: $absoluteFolderPath, ')
-          ..write('isDeleted: $isDeleted, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -560,17 +462,6 @@ class $ScannedDocumentsTable extends ScannedDocuments
   @override
   late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
     'updated_at',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
-    'deletedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
-    'deleted_at',
     aliasedName,
     true,
     type: DriftSqlType.dateTime,
@@ -613,21 +504,6 @@ class $ScannedDocumentsTable extends ScannedDocuments
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
-    'isDeleted',
-  );
-  @override
-  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
-    'is_deleted',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_deleted" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
   static const VerificationMeta _relativeImagePathMeta = const VerificationMeta(
     'relativeImagePath',
   );
@@ -656,11 +532,9 @@ class $ScannedDocumentsTable extends ScannedDocuments
   List<GeneratedColumn> get $columns => [
     createdAt,
     updatedAt,
-    deletedAt,
     id,
     groupId,
     name,
-    isDeleted,
     relativeImagePath,
     absoluteImagePath,
   ];
@@ -688,12 +562,6 @@ class $ScannedDocumentsTable extends ScannedDocuments
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
-    if (data.containsKey('deleted_at')) {
-      context.handle(
-        _deletedAtMeta,
-        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
-      );
-    }
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
@@ -712,12 +580,6 @@ class $ScannedDocumentsTable extends ScannedDocuments
       );
     } else if (isInserting) {
       context.missing(_nameMeta);
-    }
-    if (data.containsKey('is_deleted')) {
-      context.handle(
-        _isDeletedMeta,
-        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
-      );
     }
     if (data.containsKey('relative_image_path')) {
       context.handle(
@@ -758,10 +620,6 @@ class $ScannedDocumentsTable extends ScannedDocuments
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       ),
-      deletedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}deleted_at'],
-      ),
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -773,10 +631,6 @@ class $ScannedDocumentsTable extends ScannedDocuments
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
-      )!,
-      isDeleted: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_deleted'],
       )!,
       relativeImagePath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -798,21 +652,17 @@ class $ScannedDocumentsTable extends ScannedDocuments
 class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
   final DateTime createdAt;
   final DateTime? updatedAt;
-  final DateTime? deletedAt;
   final String id;
   final String groupId;
   final String name;
-  final bool isDeleted;
   final String relativeImagePath;
   final String absoluteImagePath;
   const ScannedDocument({
     required this.createdAt,
     this.updatedAt,
-    this.deletedAt,
     required this.id,
     required this.groupId,
     required this.name,
-    required this.isDeleted,
     required this.relativeImagePath,
     required this.absoluteImagePath,
   });
@@ -823,13 +673,9 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<DateTime>(updatedAt);
     }
-    if (!nullToAbsent || deletedAt != null) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt);
-    }
     map['id'] = Variable<String>(id);
     map['group_id'] = Variable<String>(groupId);
     map['name'] = Variable<String>(name);
-    map['is_deleted'] = Variable<bool>(isDeleted);
     map['relative_image_path'] = Variable<String>(relativeImagePath);
     map['absolute_image_path'] = Variable<String>(absoluteImagePath);
     return map;
@@ -841,13 +687,9 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(updatedAt),
-      deletedAt: deletedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(deletedAt),
       id: Value(id),
       groupId: Value(groupId),
       name: Value(name),
-      isDeleted: Value(isDeleted),
       relativeImagePath: Value(relativeImagePath),
       absoluteImagePath: Value(absoluteImagePath),
     );
@@ -861,11 +703,9 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
     return ScannedDocument(
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
-      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       id: serializer.fromJson<String>(json['id']),
       groupId: serializer.fromJson<String>(json['groupId']),
       name: serializer.fromJson<String>(json['name']),
-      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       relativeImagePath: serializer.fromJson<String>(json['relativeImagePath']),
       absoluteImagePath: serializer.fromJson<String>(json['absoluteImagePath']),
     );
@@ -876,11 +716,9 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
     return <String, dynamic>{
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
-      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'id': serializer.toJson<String>(id),
       'groupId': serializer.toJson<String>(groupId),
       'name': serializer.toJson<String>(name),
-      'isDeleted': serializer.toJson<bool>(isDeleted),
       'relativeImagePath': serializer.toJson<String>(relativeImagePath),
       'absoluteImagePath': serializer.toJson<String>(absoluteImagePath),
     };
@@ -889,21 +727,17 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
   ScannedDocument copyWith({
     DateTime? createdAt,
     Value<DateTime?> updatedAt = const Value.absent(),
-    Value<DateTime?> deletedAt = const Value.absent(),
     String? id,
     String? groupId,
     String? name,
-    bool? isDeleted,
     String? relativeImagePath,
     String? absoluteImagePath,
   }) => ScannedDocument(
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
-    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     id: id ?? this.id,
     groupId: groupId ?? this.groupId,
     name: name ?? this.name,
-    isDeleted: isDeleted ?? this.isDeleted,
     relativeImagePath: relativeImagePath ?? this.relativeImagePath,
     absoluteImagePath: absoluteImagePath ?? this.absoluteImagePath,
   );
@@ -911,11 +745,9 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
     return ScannedDocument(
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       id: data.id.present ? data.id.value : this.id,
       groupId: data.groupId.present ? data.groupId.value : this.groupId,
       name: data.name.present ? data.name.value : this.name,
-      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       relativeImagePath: data.relativeImagePath.present
           ? data.relativeImagePath.value
           : this.relativeImagePath,
@@ -930,11 +762,9 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
     return (StringBuffer('ScannedDocument(')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt, ')
           ..write('id: $id, ')
           ..write('groupId: $groupId, ')
           ..write('name: $name, ')
-          ..write('isDeleted: $isDeleted, ')
           ..write('relativeImagePath: $relativeImagePath, ')
           ..write('absoluteImagePath: $absoluteImagePath')
           ..write(')'))
@@ -945,11 +775,9 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
   int get hashCode => Object.hash(
     createdAt,
     updatedAt,
-    deletedAt,
     id,
     groupId,
     name,
-    isDeleted,
     relativeImagePath,
     absoluteImagePath,
   );
@@ -959,11 +787,9 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
       (other is ScannedDocument &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.deletedAt == this.deletedAt &&
           other.id == this.id &&
           other.groupId == this.groupId &&
           other.name == this.name &&
-          other.isDeleted == this.isDeleted &&
           other.relativeImagePath == this.relativeImagePath &&
           other.absoluteImagePath == this.absoluteImagePath);
 }
@@ -971,22 +797,18 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
 class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
   final Value<DateTime> createdAt;
   final Value<DateTime?> updatedAt;
-  final Value<DateTime?> deletedAt;
   final Value<String> id;
   final Value<String> groupId;
   final Value<String> name;
-  final Value<bool> isDeleted;
   final Value<String> relativeImagePath;
   final Value<String> absoluteImagePath;
   final Value<int> rowid;
   const ScannedDocumentsCompanion({
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
-    this.deletedAt = const Value.absent(),
     this.id = const Value.absent(),
     this.groupId = const Value.absent(),
     this.name = const Value.absent(),
-    this.isDeleted = const Value.absent(),
     this.relativeImagePath = const Value.absent(),
     this.absoluteImagePath = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -994,11 +816,9 @@ class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
   ScannedDocumentsCompanion.insert({
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
-    this.deletedAt = const Value.absent(),
     this.id = const Value.absent(),
     required String groupId,
     required String name,
-    this.isDeleted = const Value.absent(),
     required String relativeImagePath,
     required String absoluteImagePath,
     this.rowid = const Value.absent(),
@@ -1009,11 +829,9 @@ class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
   static Insertable<ScannedDocument> custom({
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
-    Expression<DateTime>? deletedAt,
     Expression<String>? id,
     Expression<String>? groupId,
     Expression<String>? name,
-    Expression<bool>? isDeleted,
     Expression<String>? relativeImagePath,
     Expression<String>? absoluteImagePath,
     Expression<int>? rowid,
@@ -1021,11 +839,9 @@ class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
     return RawValuesInsertable({
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
-      if (deletedAt != null) 'deleted_at': deletedAt,
       if (id != null) 'id': id,
       if (groupId != null) 'group_id': groupId,
       if (name != null) 'name': name,
-      if (isDeleted != null) 'is_deleted': isDeleted,
       if (relativeImagePath != null) 'relative_image_path': relativeImagePath,
       if (absoluteImagePath != null) 'absolute_image_path': absoluteImagePath,
       if (rowid != null) 'rowid': rowid,
@@ -1035,11 +851,9 @@ class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
   ScannedDocumentsCompanion copyWith({
     Value<DateTime>? createdAt,
     Value<DateTime?>? updatedAt,
-    Value<DateTime?>? deletedAt,
     Value<String>? id,
     Value<String>? groupId,
     Value<String>? name,
-    Value<bool>? isDeleted,
     Value<String>? relativeImagePath,
     Value<String>? absoluteImagePath,
     Value<int>? rowid,
@@ -1047,11 +861,9 @@ class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
     return ScannedDocumentsCompanion(
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      deletedAt: deletedAt ?? this.deletedAt,
       id: id ?? this.id,
       groupId: groupId ?? this.groupId,
       name: name ?? this.name,
-      isDeleted: isDeleted ?? this.isDeleted,
       relativeImagePath: relativeImagePath ?? this.relativeImagePath,
       absoluteImagePath: absoluteImagePath ?? this.absoluteImagePath,
       rowid: rowid ?? this.rowid,
@@ -1067,9 +879,6 @@ class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
-    if (deletedAt.present) {
-      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
-    }
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
@@ -1078,9 +887,6 @@ class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
-    }
-    if (isDeleted.present) {
-      map['is_deleted'] = Variable<bool>(isDeleted.value);
     }
     if (relativeImagePath.present) {
       map['relative_image_path'] = Variable<String>(relativeImagePath.value);
@@ -1099,11 +905,9 @@ class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
     return (StringBuffer('ScannedDocumentsCompanion(')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt, ')
           ..write('id: $id, ')
           ..write('groupId: $groupId, ')
           ..write('name: $name, ')
-          ..write('isDeleted: $isDeleted, ')
           ..write('relativeImagePath: $relativeImagePath, ')
           ..write('absoluteImagePath: $absoluteImagePath, ')
           ..write('rowid: $rowid')
@@ -1486,24 +1290,20 @@ typedef $$ScannedDocumentsGroupsTableCreateCompanionBuilder =
     ScannedDocumentsGroupsCompanion Function({
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
-      Value<DateTime?> deletedAt,
       Value<String> id,
       required String name,
       required String relativeFolderPath,
       required String absoluteFolderPath,
-      Value<bool> isDeleted,
       Value<int> rowid,
     });
 typedef $$ScannedDocumentsGroupsTableUpdateCompanionBuilder =
     ScannedDocumentsGroupsCompanion Function({
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
-      Value<DateTime?> deletedAt,
       Value<String> id,
       Value<String> name,
       Value<String> relativeFolderPath,
       Value<String> absoluteFolderPath,
-      Value<bool> isDeleted,
       Value<int> rowid,
     });
 
@@ -1560,11 +1360,6 @@ class $$ScannedDocumentsGroupsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
-    column: $table.deletedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
@@ -1582,11 +1377,6 @@ class $$ScannedDocumentsGroupsTableFilterComposer
 
   ColumnFilters<String> get absoluteFolderPath => $composableBuilder(
     column: $table.absoluteFolderPath,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isDeleted => $composableBuilder(
-    column: $table.isDeleted,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1635,11 +1425,6 @@ class $$ScannedDocumentsGroupsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
-    column: $table.deletedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
@@ -1659,11 +1444,6 @@ class $$ScannedDocumentsGroupsTableOrderingComposer
     column: $table.absoluteFolderPath,
     builder: (column) => ColumnOrderings(column),
   );
-
-  ColumnOrderings<bool> get isDeleted => $composableBuilder(
-    column: $table.isDeleted,
-    builder: (column) => ColumnOrderings(column),
-  );
 }
 
 class $$ScannedDocumentsGroupsTableAnnotationComposer
@@ -1681,9 +1461,6 @@ class $$ScannedDocumentsGroupsTableAnnotationComposer
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get deletedAt =>
-      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
-
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
@@ -1699,9 +1476,6 @@ class $$ScannedDocumentsGroupsTableAnnotationComposer
     column: $table.absoluteFolderPath,
     builder: (column) => column,
   );
-
-  GeneratedColumn<bool> get isDeleted =>
-      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
 
   Expression<T> scannedDocumentsRefs<T extends Object>(
     Expression<T> Function($$ScannedDocumentsTableAnnotationComposer a) f,
@@ -1770,44 +1544,36 @@ class $$ScannedDocumentsGroupsTableTableManager
               ({
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
-                Value<DateTime?> deletedAt = const Value.absent(),
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> relativeFolderPath = const Value.absent(),
                 Value<String> absoluteFolderPath = const Value.absent(),
-                Value<bool> isDeleted = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ScannedDocumentsGroupsCompanion(
                 createdAt: createdAt,
                 updatedAt: updatedAt,
-                deletedAt: deletedAt,
                 id: id,
                 name: name,
                 relativeFolderPath: relativeFolderPath,
                 absoluteFolderPath: absoluteFolderPath,
-                isDeleted: isDeleted,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
-                Value<DateTime?> deletedAt = const Value.absent(),
                 Value<String> id = const Value.absent(),
                 required String name,
                 required String relativeFolderPath,
                 required String absoluteFolderPath,
-                Value<bool> isDeleted = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ScannedDocumentsGroupsCompanion.insert(
                 createdAt: createdAt,
                 updatedAt: updatedAt,
-                deletedAt: deletedAt,
                 id: id,
                 name: name,
                 relativeFolderPath: relativeFolderPath,
                 absoluteFolderPath: absoluteFolderPath,
-                isDeleted: isDeleted,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -1876,11 +1642,9 @@ typedef $$ScannedDocumentsTableCreateCompanionBuilder =
     ScannedDocumentsCompanion Function({
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
-      Value<DateTime?> deletedAt,
       Value<String> id,
       required String groupId,
       required String name,
-      Value<bool> isDeleted,
       required String relativeImagePath,
       required String absoluteImagePath,
       Value<int> rowid,
@@ -1889,11 +1653,9 @@ typedef $$ScannedDocumentsTableUpdateCompanionBuilder =
     ScannedDocumentsCompanion Function({
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
-      Value<DateTime?> deletedAt,
       Value<String> id,
       Value<String> groupId,
       Value<String> name,
-      Value<bool> isDeleted,
       Value<String> relativeImagePath,
       Value<String> absoluteImagePath,
       Value<int> rowid,
@@ -1946,11 +1708,6 @@ class $$ScannedDocumentsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
-    column: $table.deletedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
@@ -1958,11 +1715,6 @@ class $$ScannedDocumentsTableFilterComposer
 
   ColumnFilters<String> get name => $composableBuilder(
     column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isDeleted => $composableBuilder(
-    column: $table.isDeleted,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2020,11 +1772,6 @@ class $$ScannedDocumentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
-    column: $table.deletedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
@@ -2032,11 +1779,6 @@ class $$ScannedDocumentsTableOrderingComposer
 
   ColumnOrderings<String> get name => $composableBuilder(
     column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isDeleted => $composableBuilder(
-    column: $table.isDeleted,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -2090,17 +1832,11 @@ class $$ScannedDocumentsTableAnnotationComposer
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get deletedAt =>
-      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
-
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<bool> get isDeleted =>
-      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
 
   GeneratedColumn<String> get relativeImagePath => $composableBuilder(
     column: $table.relativeImagePath,
@@ -2169,22 +1905,18 @@ class $$ScannedDocumentsTableTableManager
               ({
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
-                Value<DateTime?> deletedAt = const Value.absent(),
                 Value<String> id = const Value.absent(),
                 Value<String> groupId = const Value.absent(),
                 Value<String> name = const Value.absent(),
-                Value<bool> isDeleted = const Value.absent(),
                 Value<String> relativeImagePath = const Value.absent(),
                 Value<String> absoluteImagePath = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ScannedDocumentsCompanion(
                 createdAt: createdAt,
                 updatedAt: updatedAt,
-                deletedAt: deletedAt,
                 id: id,
                 groupId: groupId,
                 name: name,
-                isDeleted: isDeleted,
                 relativeImagePath: relativeImagePath,
                 absoluteImagePath: absoluteImagePath,
                 rowid: rowid,
@@ -2193,22 +1925,18 @@ class $$ScannedDocumentsTableTableManager
               ({
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
-                Value<DateTime?> deletedAt = const Value.absent(),
                 Value<String> id = const Value.absent(),
                 required String groupId,
                 required String name,
-                Value<bool> isDeleted = const Value.absent(),
                 required String relativeImagePath,
                 required String absoluteImagePath,
                 Value<int> rowid = const Value.absent(),
               }) => ScannedDocumentsCompanion.insert(
                 createdAt: createdAt,
                 updatedAt: updatedAt,
-                deletedAt: deletedAt,
                 id: id,
                 groupId: groupId,
                 name: name,
-                isDeleted: isDeleted,
                 relativeImagePath: relativeImagePath,
                 absoluteImagePath: absoluteImagePath,
                 rowid: rowid,

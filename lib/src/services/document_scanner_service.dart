@@ -15,14 +15,19 @@ class MlKitDocumentScannerService implements IDocumentScannerService {
       pageLimit: pageLimit,
       isGalleryImport: true,
     );
-
     final documentScanner = DocumentScanner(options: options);
-    final DocumentScanningResult result = await documentScanner.scanDocument();
 
-    if (result.images == null || result.images!.isEmpty) {
-      return null;
+    try {
+      final DocumentScanningResult result = await documentScanner
+          .scanDocument();
+
+      if (result.images == null || result.images!.isEmpty) {
+        return null;
+      }
+
+      return result.images;
+    } finally {
+      documentScanner.close();
     }
-
-    return result.images;
   }
 }

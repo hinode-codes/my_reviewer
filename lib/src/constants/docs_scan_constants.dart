@@ -14,6 +14,6 @@ abstract final class DocsScanConstants {
   /// Thumbnail in the group sheet, roughly the proportions of a paper sheet.
   static const double thumbnailWidth = 220;
   static const double thumbnailHeight = 280;
-  static const double thumbnailBorderWidth = 2;
-  static const double thumbnailSelectedBorderWidth = 4;
+  static const double thumbnailBorderWidth = 1;
+  static const double thumbnailSelectedBorderWidth = 2;
 }

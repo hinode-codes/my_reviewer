@@ -59,6 +59,9 @@ class Translations$common$en {
 	String get title => 'My Reviewer';
 
 	late final Translations$common$bottomNavbar$en bottomNavbar = Translations$common$bottomNavbar$en._(_root);
+	late final Translations$common$buttons$en buttons = Translations$common$buttons$en._(_root);
+	late final Translations$common$status$en status = Translations$common$status$en._(_root);
+	late final Translations$common$selection$en selection = Translations$common$selection$en._(_root);
 }
 
 // Path: docs
@@ -69,7 +72,7 @@ class Translations$docs$en {
 
 	// Translations
 	late final Translations$docs$main$en main = Translations$docs$main$en._(_root);
-	late final Translations$docs$selection$en selection = Translations$docs$selection$en._(_root);
+	late final Translations$docs$detail$en detail = Translations$docs$detail$en._(_root);
 	late final Translations$docs$scan$en scan = Translations$docs$scan$en._(_root);
 }
 
@@ -104,13 +107,84 @@ class Translations$common$bottomNavbar$en {
 	// Translations
 
 	/// en: 'Documents'
-	String get documents => 'Documents';
+	String get docs => 'Documents';
 
-	/// en: 'Flashcards'
-	String get flashcards => 'Flashcards';
+	/// en: 'Learn'
+	String get learn => 'Learn';
 
 	/// en: 'Settings'
 	String get settings => 'Settings';
+}
+
+// Path: common.buttons
+class Translations$common$buttons$en {
+	Translations$common$buttons$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Confirm'
+	String get confirm => 'Confirm';
+
+	/// en: 'Cancel'
+	String get cancel => 'Cancel';
+
+	/// en: 'Try again'
+	String get retry => 'Try again';
+
+	/// en: 'Close'
+	String get close => 'Close';
+
+	/// en: 'Proceed'
+	String get proceed => 'Proceed';
+
+	/// en: 'Done'
+	String get done => 'Done';
+}
+
+// Path: common.status
+class Translations$common$status$en {
+	Translations$common$status$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Successful operation'
+	String get success => 'Successful operation';
+
+	/// en: 'Something went wrong'
+	String get failed => 'Something went wrong';
+
+	/// en: 'Preparing... please wait'
+	String get preparing => 'Preparing... please wait';
+
+	/// en: 'Finishing up...'
+	String get finishing => 'Finishing up...';
+
+	/// en: 'Processing... {count} / {total}'
+	String processing({required Object count, required Object total}) => 'Processing... ${count} / ${total}';
+
+	/// en: 'Loading...'
+	String get loading => 'Loading...';
+}
+
+// Path: common.selection
+class Translations$common$selection$en {
+	Translations$common$selection$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	late final Translations$common$selection$tile$en tile = Translations$common$selection$tile$en._(_root);
+	late final Translations$common$selection$delete$en delete = Translations$common$selection$delete$en._(_root);
+	late final Translations$common$selection$close$en close = Translations$common$selection$close$en._(_root);
+
+	/// en: '{count} / {total} selected'
+	String label({required Object count, required Object total}) => '${count} / ${total} selected';
+
+	late final Translations$common$selection$selectAllButton$en selectAllButton = Translations$common$selection$selectAllButton$en._(_root);
 }
 
 // Path: docs.main
@@ -141,45 +215,17 @@ class Translations$docs$main$en {
 	);
 }
 
-// Path: docs.selection
-class Translations$docs$selection$en {
-	Translations$docs$selection$en._(this._root);
+// Path: docs.detail
+class Translations$docs$detail$en {
+	Translations$docs$detail$en._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+	late final Translations$docs$detail$edit$en edit = Translations$docs$detail$edit$en._(_root);
 
-	/// en: '{count} / {total}'
-	String selectedLabel({required Object count, required Object total}) => '${count} / ${total}';
-
-	/// en: 'Cancel selection mode.'
-	String get cancelTooltip => 'Cancel selection mode.';
-
-	/// en: 'Deselect all documents.'
-	String get deselectAllTooltip => 'Deselect all documents.';
-
-	/// en: 'Select all documents.'
-	String get selectAllTooltip => 'Select all documents.';
-
-	/// en: 'Delete selected documents.'
-	String get deleteTooltip => 'Delete selected documents.';
-
-	/// en: 'Enter selection mode.'
-	String get enterSelectionTooltip => 'Enter selection mode.';
-
-	/// en: 'Delete {n} document(s)?'
-	String deleteConfirmTitle({required Object n}) => 'Delete ${n} document(s)?';
-
-	/// en: 'Are you sure you want to delete the selected document(s)?'
-	String get deleteConfirmMessage => 'Are you sure you want to delete the selected document(s)?';
-
-	/// en: 'Cancel'
-	String get cancelButton => 'Cancel';
-
-	/// en: 'Delete'
-	String get deleteButton => 'Delete';
-
-	late final Translations$docs$selection$delete$en delete = Translations$docs$selection$delete$en._(_root);
+	/// en: 'No documents found in this group.'
+	String get noDocs => 'No documents found in this group.';
 }
 
 // Path: docs.scan
@@ -216,34 +262,72 @@ class Translations$flashcards$main$en {
 	String get title => 'Flashcards';
 }
 
-// Path: docs.selection.delete
-class Translations$docs$selection$delete$en {
-	Translations$docs$selection$delete$en._(this._root);
+// Path: common.selection.tile
+class Translations$common$selection$tile$en {
+	Translations$common$selection$tile$en._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
 	// Translations
 
-	/// en: 'Deleting document(s)... {current} / {total}'
-	String deletingFiles({required Object current, required Object total}) => 'Deleting document(s)... ${current} / ${total}';
+	/// en: 'Select this tile'
+	String get select => 'Select this tile';
 
-	/// en: 'Document(s) deleted successfully.'
-	String get done => 'Document(s) deleted successfully.';
+	/// en: 'Deselect this tile'
+	String get deselect => 'Deselect this tile';
 
-	/// en: 'Failed to delete document(s).'
-	String get failed => 'Failed to delete document(s).';
+	/// en: 'You have entered selection mode. This tile has been selected. Please select or deselect other tiles.'
+	String get startSelecting => 'You have entered selection mode. This tile has been selected. Please select or deselect other tiles.';
+}
 
-	/// en: 'Okay'
-	String get closeAction => 'Okay';
+// Path: common.selection.delete
+class Translations$common$selection$delete$en {
+	Translations$common$selection$delete$en._(this._root);
 
-	/// en: 'Try to Delete Again'
-	String get retryAction => 'Try to Delete Again';
+	final Translations _root; // ignore: unused_field
 
-	/// en: 'Preparing to delete document(s)...'
-	String get preparing => 'Preparing to delete document(s)...';
+	// Translations
+	late final Translations$common$selection$delete$inactive$en inactive = Translations$common$selection$delete$inactive$en._(_root);
+	late final Translations$common$selection$delete$active$en active = Translations$common$selection$delete$active$en._(_root);
+	late final Translations$common$selection$delete$confirmationDialog$en confirmationDialog = Translations$common$selection$delete$confirmationDialog$en._(_root);
+}
 
-	/// en: 'Finishing up...'
-	String get finishing => 'Finishing up...';
+// Path: common.selection.close
+class Translations$common$selection$close$en {
+	Translations$common$selection$close$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Cancel selection'
+	String get tooltip => 'Cancel selection';
+}
+
+// Path: common.selection.selectAllButton
+class Translations$common$selection$selectAllButton$en {
+	Translations$common$selection$selectAllButton$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	late final Translations$common$selection$selectAllButton$deselectAll$en deselectAll = Translations$common$selection$selectAllButton$deselectAll$en._(_root);
+	late final Translations$common$selection$selectAllButton$selectAll$en selectAll = Translations$common$selection$selectAllButton$selectAll$en._(_root);
+}
+
+// Path: docs.detail.edit
+class Translations$docs$detail$edit$en {
+	Translations$docs$detail$edit$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Edit this document group'
+	String get tooltip => 'Edit this document group';
+
+	/// en: 'Edit Group'
+	String get label => 'Edit Group';
 }
 
 // Path: docs.scan.preview
@@ -253,6 +337,9 @@ class Translations$docs$scan$preview$en {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+
+	/// en: 'Scanned Documents'
+	String get emptyTitle => 'Scanned Documents';
 
 	/// en: '{current} / {total}'
 	String title({required Object current, required Object total}) => '${current} / ${total}';
@@ -265,6 +352,12 @@ class Translations$docs$scan$preview$en {
 
 	/// en: 'Save'
 	String get save => 'Save';
+
+	/// en: 'Scan More'
+	String get addLabel => 'Scan More';
+
+	/// en: 'Scan more documents.'
+	String get addTooltip => 'Scan more documents.';
 
 	late final Translations$docs$scan$preview$bottomBar$en bottomBar = Translations$docs$scan$preview$bottomBar$en._(_root);
 
@@ -337,6 +430,72 @@ class Translations$docs$scan$discard$en {
 	String get save => 'Save & Exit';
 }
 
+// Path: common.selection.delete.inactive
+class Translations$common$selection$delete$inactive$en {
+	Translations$common$selection$delete$inactive$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Select items to delete.'
+	String get tooltip => 'Select items to delete.';
+}
+
+// Path: common.selection.delete.active
+class Translations$common$selection$delete$active$en {
+	Translations$common$selection$delete$active$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Delete selected items.'
+	String get tooltip => 'Delete selected items.';
+}
+
+// Path: common.selection.delete.confirmationDialog
+class Translations$common$selection$delete$confirmationDialog$en {
+	Translations$common$selection$delete$confirmationDialog$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: '(one) {Deleting {n} document} (other) {Deleting {n} documents}'
+	String title({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: 'Deleting ${n} document',
+		other: 'Deleting ${n} documents',
+	);
+
+	/// en: 'Are you sure you want to continue?'
+	String get message => 'Are you sure you want to continue?';
+}
+
+// Path: common.selection.selectAllButton.deselectAll
+class Translations$common$selection$selectAllButton$deselectAll$en {
+	Translations$common$selection$selectAllButton$deselectAll$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Deselect all items.'
+	String get tooltip => 'Deselect all items.';
+}
+
+// Path: common.selection.selectAllButton.selectAll
+class Translations$common$selection$selectAllButton$selectAll$en {
+	Translations$common$selection$selectAllButton$selectAll$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Select all items.'
+	String get tooltip => 'Select all items.';
+}
+
 // Path: docs.scan.preview.bottomBar
 class Translations$docs$scan$preview$bottomBar$en {
 	Translations$docs$scan$preview$bottomBar$en._(this._root);
@@ -388,38 +547,50 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'common.title' => 'My Reviewer',
-			'common.bottomNavbar.documents' => 'Documents',
-			'common.bottomNavbar.flashcards' => 'Flashcards',
+			'common.bottomNavbar.docs' => 'Documents',
+			'common.bottomNavbar.learn' => 'Learn',
 			'common.bottomNavbar.settings' => 'Settings',
+			'common.buttons.confirm' => 'Confirm',
+			'common.buttons.cancel' => 'Cancel',
+			'common.buttons.retry' => 'Try again',
+			'common.buttons.close' => 'Close',
+			'common.buttons.proceed' => 'Proceed',
+			'common.buttons.done' => 'Done',
+			'common.status.success' => 'Successful operation',
+			'common.status.failed' => 'Something went wrong',
+			'common.status.preparing' => 'Preparing... please wait',
+			'common.status.finishing' => 'Finishing up...',
+			'common.status.processing' => ({required Object count, required Object total}) => 'Processing... ${count} / ${total}',
+			'common.status.loading' => 'Loading...',
+			'common.selection.tile.select' => 'Select this tile',
+			'common.selection.tile.deselect' => 'Deselect this tile',
+			'common.selection.tile.startSelecting' => 'You have entered selection mode. This tile has been selected. Please select or deselect other tiles.',
+			'common.selection.delete.inactive.tooltip' => 'Select items to delete.',
+			'common.selection.delete.active.tooltip' => 'Delete selected items.',
+			'common.selection.delete.confirmationDialog.title' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Deleting ${n} document', other: 'Deleting ${n} documents', ), 
+			'common.selection.delete.confirmationDialog.message' => 'Are you sure you want to continue?',
+			'common.selection.close.tooltip' => 'Cancel selection',
+			'common.selection.label' => ({required Object count, required Object total}) => '${count} / ${total} selected',
+			'common.selection.selectAllButton.deselectAll.tooltip' => 'Deselect all items.',
+			'common.selection.selectAllButton.selectAll.tooltip' => 'Select all items.',
 			'docs.main.title' => 'Documents',
 			'docs.main.fab' => 'Scan a document',
 			'docs.main.noDocs' => 'No documents found. Tap the button below to scan a document.',
 			'docs.main.snapshotError' => ({required Object error}) => 'Snapshot error: ${error}',
 			'docs.main.documentCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, zero: 'No documents', one: '1 document', other: '${n} documents', ), 
-			'docs.selection.selectedLabel' => ({required Object count, required Object total}) => '${count} / ${total}',
-			'docs.selection.cancelTooltip' => 'Cancel selection mode.',
-			'docs.selection.deselectAllTooltip' => 'Deselect all documents.',
-			'docs.selection.selectAllTooltip' => 'Select all documents.',
-			'docs.selection.deleteTooltip' => 'Delete selected documents.',
-			'docs.selection.enterSelectionTooltip' => 'Enter selection mode.',
-			'docs.selection.deleteConfirmTitle' => ({required Object n}) => 'Delete ${n} document(s)?',
-			'docs.selection.deleteConfirmMessage' => 'Are you sure you want to delete the selected document(s)?',
-			'docs.selection.cancelButton' => 'Cancel',
-			'docs.selection.deleteButton' => 'Delete',
-			'docs.selection.delete.deletingFiles' => ({required Object current, required Object total}) => 'Deleting document(s)... ${current} / ${total}',
-			'docs.selection.delete.done' => 'Document(s) deleted successfully.',
-			'docs.selection.delete.failed' => 'Failed to delete document(s).',
-			'docs.selection.delete.closeAction' => 'Okay',
-			'docs.selection.delete.retryAction' => 'Try to Delete Again',
-			'docs.selection.delete.preparing' => 'Preparing to delete document(s)...',
-			'docs.selection.delete.finishing' => 'Finishing up...',
+			'docs.detail.edit.tooltip' => 'Edit this document group',
+			'docs.detail.edit.label' => 'Edit Group',
+			'docs.detail.noDocs' => 'No documents found in this group.',
 			'docs.scan.title' => 'Scan Document',
 			'docs.scan.noDocsCaptured' => 'No documents captured.',
 			'docs.scan.noDocsRetry' => 'Scan new documents',
+			'docs.scan.preview.emptyTitle' => 'Scanned Documents',
 			'docs.scan.preview.title' => ({required Object current, required Object total}) => '${current} / ${total}',
 			'docs.scan.preview.delete' => 'Delete',
 			'docs.scan.preview.scanMore' => 'Scan More',
 			'docs.scan.preview.save' => 'Save',
+			'docs.scan.preview.addLabel' => 'Scan More',
+			'docs.scan.preview.addTooltip' => 'Scan more documents.',
 			'docs.scan.preview.bottomBar.addTooltip' => 'Scan more documents.',
 			'docs.scan.preview.bottomBar.deleteTooltip' => 'Delete current document.',
 			'docs.scan.preview.bottomBar.groupTooltip' => 'Show all documents.',

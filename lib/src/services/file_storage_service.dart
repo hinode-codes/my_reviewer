@@ -1,4 +1,3 @@
-// lib/src/services/file_storage_service.dart
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -54,6 +53,32 @@ class FileStorageService {
 
     await sourceFile.copy(absolutePath);
     return (relativePath: relativePath, absolutePath: absolutePath);
+  }
+
+  /// Names of everything directly inside [subDirectories], so new names can
+  /// avoid them.
+  Future<Set<String>> listEntryNames(List<String> subDirectories) async {
+    final base = await appDocumentsDirectory;
+    final dir = Directory(p.joinAll([base.path, ...subDirectories]));
+
+    if (!await dir.exists()) {
+      return {};
+    }
+
+    return {await for (final entity in dir.list()) p.basename(entity.path)};
+  }
+
+  /// Unified rename for files or directories.
+  Future<void> rename(String fromPath, String toPath) async {
+    final type = await FileSystemEntity.type(fromPath);
+
+    if (type == FileSystemEntityType.file) {
+      await File(fromPath).rename(toPath);
+    } else if (type == FileSystemEntityType.directory) {
+      await Directory(fromPath).rename(toPath);
+    } else {
+      throw FileSystemException('Nothing to rename', fromPath);
+    }
   }
 
   /// Unified delete for files or directories.

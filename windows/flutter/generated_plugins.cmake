@@ -3,9 +3,6 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  connectivity_plus
-  flutter_edge_ai
-  flutter_local_ai
   permission_handler_windows
 )
 
