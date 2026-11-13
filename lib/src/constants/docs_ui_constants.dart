@@ -20,7 +20,7 @@ abstract final class DocsUiConstants {
   static const double spacingSmall = 8.0;
   static const double spacingMedium = 16.0;
   static const double paddingAll = 8.0;
-  static const int thumbnailCacheWidth = 300;
+  static const int thumbnailCacheWidth = 200;
 
 
   static const String dateTimePattern = 'MM-dd-yyyy HH:mm';

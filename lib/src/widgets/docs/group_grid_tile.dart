@@ -75,7 +75,7 @@ class DocsGroupGridTile extends StatelessWidget {
             switch (_selection.tap(_group)) {
               case SelectionTap.openItem:
                 DocsGroupRouteData(
-                  docId: _group.id,
+                  groupId: _group.id,
                   $extra: _group.documents,
                 ).push(context);
                 break;

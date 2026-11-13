@@ -5,9 +5,11 @@ import 'package:my_reviewer/src/constants/docs_ui_constants.dart';
 
 /// A saved page image at thumbnail resolution.
 class ThumbnailImage extends StatelessWidget {
-  const ThumbnailImage({super.key, required this.path});
+  const ThumbnailImage({super.key, required this.path, this.fit = BoxFit.cover});
 
   final String path;
+
+  final BoxFit fit;
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +17,7 @@ class ThumbnailImage extends StatelessWidget {
 
     return Image.file(
       File(path),
-      fit: BoxFit.cover,
+      fit: fit,
       // Keeps the old frame while a rebuilt list re-resolves the same file,
       // so thumbnails do not blink on every stream emission.
       gaplessPlayback: true,

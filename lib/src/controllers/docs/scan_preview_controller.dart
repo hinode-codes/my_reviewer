@@ -85,6 +85,8 @@ class ScanPreviewController extends ChangeNotifier {
     _apply(_snapshot.copyWith(pages: [..._snapshot.pages]..removeAt(index)));
   }
 
+  bool _dispose = false;
+
   Future<ScanOutcome> scan() async {
     switch (_scannerStatus) {
       case ScannerStatus.scanning:
@@ -104,7 +106,9 @@ class ScanPreviewController extends ChangeNotifier {
         return ScanOutcome.cancelled;
       }
 
-      _appendPages(results);
+      if (!_dispose) {
+        _appendPages(results);
+      }
 
       return ScanOutcome.captured;
     } catch (err) {
@@ -114,7 +118,9 @@ class ScanPreviewController extends ChangeNotifier {
     } finally {
       _scannerStatus = ScannerStatus.idle;
 
-      notifyListeners();
+      if (!_dispose) {
+        notifyListeners();
+      }
     }
   }
 
@@ -202,6 +208,7 @@ class ScanPreviewController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _dispose = true;
     // Every unsaved exit ends here, so no temp file is left behind. A
     // remount after the ML Kit scanner returns would land here too, but it
     // starts the session from scratch, so these files would be orphaned

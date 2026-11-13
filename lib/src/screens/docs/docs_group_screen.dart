@@ -33,7 +33,7 @@ class DocsGroupScreen extends StatelessWidget {
       (c) => c.documents.itemsStatus,
     );
     final groupName = context.select<DocsGroupController, String>(
-      (c) => c.groupName ?? t.common.title,
+      (c) => c.groupName ?? t.common.status.loading,
     );
 
     return SelectionPopScope(
@@ -95,7 +95,7 @@ class _EditFab extends StatelessWidget {
 
     return FloatingActionButton.extended(
       onPressed: () {
-        DocsGroupEditRouteData(docId: context.read<DocsGroupController>().docId)
+        DocsGroupEditRouteData(groupId: context.read<DocsGroupController>().docId)
             .push(context);
       },
       tooltip: t.docs.detail.edit.tooltip,

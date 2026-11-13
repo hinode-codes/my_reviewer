@@ -48,6 +48,8 @@ class GroupEditController extends ChangeNotifier {
     previewController.addListener(notifyListeners);
   }
 
+  bool _disposed = false;
+
   Future<void> initialize() async {
     if (_initialGroup != null) {
       previewController.reset(_baseline);
@@ -57,6 +59,10 @@ class GroupEditController extends ChangeNotifier {
 
     try {
       final group = await _repository.getScannedDocumentGroup(_docId);
+
+      if (_disposed) {
+        return;
+      }
 
       _baseline = ScanSessionSnapshot.stored(group);
       _status = ItemsStatus.ready;
@@ -98,6 +104,10 @@ class GroupEditController extends ChangeNotifier {
         snapshot.groupId,
       ], onProgress: onProgress);
 
+      if (_disposed) {
+        return;
+      }
+
       _markSaved(snapshot);
 
       return;
@@ -111,6 +121,10 @@ class GroupEditController extends ChangeNotifier {
       onProgress: onProgress,
     );
 
+    if (_disposed) {
+      return;
+    }
+    
     // The screen leaves right after saving, so the draft is not reloaded:
     // a failed reload would fail a save that already succeeded, and Retry
     // would then save again from temp files that are gone. If the screen
@@ -127,6 +141,7 @@ class GroupEditController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     previewController.dispose();
     saveTask.dispose();
     super.dispose();

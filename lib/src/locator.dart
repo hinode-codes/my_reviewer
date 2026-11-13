@@ -3,6 +3,7 @@ import 'package:my_reviewer/src/controllers/docs/docs_controller.dart';
 import 'package:my_reviewer/src/controllers/docs/docs_scan_controller.dart';
 import 'package:my_reviewer/src/controllers/docs/group_controller.dart';
 import 'package:my_reviewer/src/controllers/docs/group_edit_controller.dart';
+import 'package:my_reviewer/src/controllers/docs/page_viewer_controller.dart';
 import 'package:my_reviewer/src/db/app_database.dart';
 import 'package:my_reviewer/src/db/dao/docs_dao.dart';
 import 'package:my_reviewer/src/controllers/settings_controller.dart';
@@ -48,16 +49,17 @@ void setupLocator() {
     );
   });
 
-  getIt.registerFactoryParam<GroupEditController, String, ScannedDocumentGroupModel?>((
-    docId,
-    initialGroup,
-  ) {
+  getIt.registerFactoryParam<
+    GroupEditController,
+    String,
+    ScannedDocumentGroupModel?
+  >((docId, initialGroup) {
     return GroupEditController(
       repository: getIt<IScannedDocumentRepository>(),
       scanner: getIt<IDocumentScannerService>(),
       storageService: getIt<FileStorageService>(),
       docId: docId,
-      initialGroup: initialGroup
+      initialGroup: initialGroup,
     );
   });
 
@@ -73,4 +75,15 @@ void setupLocator() {
       initialDocuments: args.initialDocuments,
     );
   });
+
+  getIt.registerFactoryParam<DocsPageViewerController, DocsPageViewerArgs, void>(
+    (args, _) {
+      return DocsPageViewerController(
+        repository: getIt<IScannedDocumentRepository>(),
+        groupId: args.groupId,
+        docId: args.docId,
+        initialDocuments: args.initialDocuments,
+      );
+    },
+  );
 }

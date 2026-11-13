@@ -47,6 +47,8 @@ class DocsGroupController extends ChangeNotifier {
   String? _groupName;
   String? get groupName => _groupName;
 
+  bool _dispose = false;
+
   void _onNameChanged(String? name) {
     _groupName = name;
     notifyListeners();
@@ -62,13 +64,16 @@ class DocsGroupController extends ChangeNotifier {
       onProgress: onProgress,
     );
 
-    documents.exitSelectionMode();
+    if (!_dispose) {
+      documents.exitSelectionMode();
+    }
 
     return outcome;
   }
 
   @override
   void dispose() {
+    _dispose = true;
     _nameSubscription.cancel();
     documents.dispose();
     deleteTask.dispose();

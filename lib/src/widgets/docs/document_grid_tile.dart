@@ -4,6 +4,8 @@ import 'package:my_reviewer/src/constants/docs_ui_constants.dart';
 import 'package:my_reviewer/src/constants/stack_constants.dart';
 import 'package:my_reviewer/src/controllers/selection/selectable_items.dart';
 import 'package:my_reviewer/src/models/docs/view_models.dart';
+import 'package:my_reviewer/src/models/selection_state.dart';
+import 'package:my_reviewer/src/routes.dart';
 import 'package:my_reviewer/src/utils/hero_tags.dart';
 import 'package:my_reviewer/src/widgets/common/misc/thumbnail/thumbnail_card.dart';
 import 'package:my_reviewer/src/widgets/common/selection/selection_tile.dart';
@@ -61,7 +63,17 @@ class DocsDocumentGridTile extends StatelessWidget {
         return SelectionTile(
           selection: _selection.selectionOf(_doc),
           onTap: () {
-            _selection.tap(_doc);
+            switch (_selection.tap(_doc)) {
+              case SelectionTap.openItem:
+                DocsPageViewerRouteData(
+                  docId: _doc.id,
+                  groupId: _doc.groupId,
+                  $extra: _selection.items,
+                ).push(context);
+                break;
+              case SelectionTap.toggled:
+                break;
+            }
           },
           onLongPress: () {
             _selection.longPress(_doc);

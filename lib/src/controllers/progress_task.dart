@@ -24,6 +24,8 @@ class ProgressTask<R> extends ChangeNotifier {
   /// the parent group.
   R? get result => _result;
 
+  bool _dispose = false;
+
   Future<OperationStatus> run() async {
     // A second tap on Save or Retry while the first run is still going
     // would otherwise write everything twice.
@@ -45,7 +47,9 @@ class ProgressTask<R> extends ChangeNotifier {
       _status = OperationStatus.failed;
     }
 
-    notifyListeners();
+    if (!_dispose) {
+      notifyListeners();
+    }
 
     return _status;
   }
@@ -53,5 +57,11 @@ class ProgressTask<R> extends ChangeNotifier {
   void _report(OperationProgress progress) {
     _progress = progress;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _dispose = true;
+    super.dispose();
   }
 }

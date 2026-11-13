@@ -25,7 +25,7 @@ RouteBase get $mainShellRouteData => StatefulShellRouteData.$route(
               factory: $DocsScanPreviewRouteData._fromState,
             ),
             GoRouteData.$route(
-              path: 'groups/:docId',
+              path: 'groups/:groupId',
               hasOverriddenOnExit: false,
               factory: $DocsGroupRouteData._fromState,
               routes: [
@@ -34,17 +34,17 @@ RouteBase get $mainShellRouteData => StatefulShellRouteData.$route(
                   hasOverriddenOnExit: false,
                   factory: $DocsGroupEditRouteData._fromState,
                 ),
-              ],
-            ),
-            GoRouteData.$route(
-              path: ':docId',
-              hasOverriddenOnExit: false,
-              factory: $DocsDocRouteData._fromState,
-              routes: [
                 GoRouteData.$route(
-                  path: 'transcription',
+                  path: ':docId',
                   hasOverriddenOnExit: false,
-                  factory: $DocsDocTranscriptionRouteData._fromState,
+                  factory: $DocsPageViewerRouteData._fromState,
+                  routes: [
+                    GoRouteData.$route(
+                      path: 'transcription',
+                      hasOverriddenOnExit: false,
+                      factory: $DocsPageViewerTranscriptionRouteData._fromState,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -128,15 +128,16 @@ mixin $DocsScanPreviewRouteData on GoRouteData {
 mixin $DocsGroupRouteData on GoRouteData {
   static DocsGroupRouteData _fromState(GoRouterState state) =>
       DocsGroupRouteData(
-        docId: state.pathParameters['docId']!,
+        groupId: state.pathParameters['groupId']!,
         $extra: state.extra as List<ScannedDocumentModel>?,
       );
 
   DocsGroupRouteData get _self => this as DocsGroupRouteData;
 
   @override
-  String get location =>
-      GoRouteData.$location('/docs/groups/${Uri.encodeComponent(_self.docId)}');
+  String get location => GoRouteData.$location(
+    '/docs/groups/${Uri.encodeComponent(_self.groupId)}',
+  );
 
   @override
   void go(BuildContext context) => context.go(location, extra: _self.$extra);
@@ -157,7 +158,7 @@ mixin $DocsGroupRouteData on GoRouteData {
 mixin $DocsGroupEditRouteData on GoRouteData {
   static DocsGroupEditRouteData _fromState(GoRouterState state) =>
       DocsGroupEditRouteData(
-        docId: state.pathParameters['docId']!,
+        groupId: state.pathParameters['groupId']!,
         $extra: state.extra as ScannedDocumentGroupModel?,
       );
 
@@ -165,7 +166,7 @@ mixin $DocsGroupEditRouteData on GoRouteData {
 
   @override
   String get location => GoRouteData.$location(
-    '/docs/groups/${Uri.encodeComponent(_self.docId)}/edit',
+    '/docs/groups/${Uri.encodeComponent(_self.groupId)}/edit',
   );
 
   @override
@@ -184,40 +185,50 @@ mixin $DocsGroupEditRouteData on GoRouteData {
       context.replace(location, extra: _self.$extra);
 }
 
-mixin $DocsDocRouteData on GoRouteData {
-  static DocsDocRouteData _fromState(GoRouterState state) =>
-      DocsDocRouteData(docId: state.pathParameters['docId']!);
+mixin $DocsPageViewerRouteData on GoRouteData {
+  static DocsPageViewerRouteData _fromState(GoRouterState state) =>
+      DocsPageViewerRouteData(
+        groupId: state.pathParameters['groupId']!,
+        docId: state.pathParameters['docId']!,
+        $extra: state.extra as List<ScannedDocumentModel>?,
+      );
 
-  DocsDocRouteData get _self => this as DocsDocRouteData;
-
-  @override
-  String get location =>
-      GoRouteData.$location('/docs/${Uri.encodeComponent(_self.docId)}');
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $DocsDocTranscriptionRouteData on GoRouteData {
-  static DocsDocTranscriptionRouteData _fromState(GoRouterState state) =>
-      DocsDocTranscriptionRouteData(docId: state.pathParameters['docId']!);
-
-  DocsDocTranscriptionRouteData get _self =>
-      this as DocsDocTranscriptionRouteData;
+  DocsPageViewerRouteData get _self => this as DocsPageViewerRouteData;
 
   @override
   String get location => GoRouteData.$location(
-    '/docs/${Uri.encodeComponent(_self.docId)}/transcription',
+    '/docs/groups/${Uri.encodeComponent(_self.groupId)}/${Uri.encodeComponent(_self.docId)}',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location, extra: _self.$extra);
+
+  @override
+  Future<T?> push<T>(BuildContext context) =>
+      context.push<T>(location, extra: _self.$extra);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location, extra: _self.$extra);
+
+  @override
+  void replace(BuildContext context) =>
+      context.replace(location, extra: _self.$extra);
+}
+
+mixin $DocsPageViewerTranscriptionRouteData on GoRouteData {
+  static DocsPageViewerTranscriptionRouteData _fromState(GoRouterState state) =>
+      DocsPageViewerTranscriptionRouteData(
+        groupId: state.pathParameters['groupId']!,
+        docId: state.pathParameters['docId']!,
+      );
+
+  DocsPageViewerTranscriptionRouteData get _self =>
+      this as DocsPageViewerTranscriptionRouteData;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/docs/groups/${Uri.encodeComponent(_self.groupId)}/${Uri.encodeComponent(_self.docId)}/transcription',
   );
 
   @override

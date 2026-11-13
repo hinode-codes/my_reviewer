@@ -89,6 +89,7 @@ class _StackCardHero extends StatelessWidget {
     return Hero(
       tag: tag,
       flightShuttleBuilder: stackCardShuttle(pose: pose, card: card),
+      transitionOnUserGestures: true,
       // The pose lives inside the Hero. A transform above it would bake the
       // tilt into the rect the flight measures, so the shuttle (which adds
       // the pose itself) and the resting card would disagree, and the cards

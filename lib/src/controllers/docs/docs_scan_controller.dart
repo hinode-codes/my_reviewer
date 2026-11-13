@@ -45,6 +45,8 @@ class DocsScanController extends ChangeNotifier {
           : ScanExitGuard.confirmNeeded,
   };
 
+  bool _dispose = false;
+
   Future<void> _save(OperationProgressCallback onProgress) async {
     final snapshot = previewController.snapshot;
 
@@ -54,6 +56,10 @@ class DocsScanController extends ChangeNotifier {
       documents: previewController.docs,
       onProgress: onProgress,
     );
+
+    if (_dispose) {
+      return;
+    }
 
     // The screen leaves right after saving, so the draft keeps showing what
     // was saved rather than reloading it. If the screen ever stays, open the
@@ -70,6 +76,7 @@ class DocsScanController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _dispose = true;
     previewController.dispose();
     saveTask.dispose();
     super.dispose();
