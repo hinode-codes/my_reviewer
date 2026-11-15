@@ -1,8 +1,16 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:my_reviewer/src/constants/stack_constants.dart';
+import 'package:my_reviewer/src/models/ui_sound.dart';
 import 'package:my_reviewer/src/utils/stack_layout.dart';
+import 'package:my_reviewer/src/widgets/common/misc/thumbnail/flight_sound.dart';
 import 'package:my_reviewer/src/widgets/common/misc/thumbnail/stack_card_shuttle.dart';
 import 'package:my_reviewer/src/widgets/common/misc/thumbnail/thumbnail_card.dart';
+
+/// The stack opening into its group, and gathering back.
+const FlightSounds _stackSounds = (
+  push: UiSound.stackSpread,
+  pop: UiSound.stackGather,
+);
 
 /// Up to [StackConstants.maxVisibleCards] page images fanned out as a
 /// stack, each a hero that untilts as it flies to the page view.
@@ -43,6 +51,7 @@ class StackedThumbnailCard extends StatelessWidget {
           count: displayPaths.length,
           cardAspectRatio: cardAspectRatio,
         );
+        final frontIndex = displayPaths.length - 1;
 
         return Center(
           child: Stack(
@@ -53,6 +62,8 @@ class StackedThumbnailCard extends StatelessWidget {
                 _StackCardHero(
                   tag: _heroTagFor(path),
                   pose: layout.poses[index],
+                  // Every card flies at once; only the front one sounds.
+                  sounds: index == frontIndex ? _stackSounds : null,
                   card: ThumbnailCard(
                     path: path,
                     width: layout.cardSize.width,
@@ -77,18 +88,24 @@ class _StackCardHero extends StatelessWidget {
   const _StackCardHero({
     required this.tag,
     required this.pose,
+    required this.sounds,
     required this.card,
   });
 
   final String tag;
   final CardPose pose;
+  final FlightSounds? sounds;
   final Widget card;
 
   @override
   Widget build(BuildContext context) {
     return Hero(
       tag: tag,
-      flightShuttleBuilder: stackCardShuttle(pose: pose, card: card),
+      flightShuttleBuilder: stackCardShuttle(
+        pose: pose,
+        card: card,
+        sounds: sounds,
+      ),
       transitionOnUserGestures: true,
       // The pose lives inside the Hero. A transform above it would bake the
       // tilt into the rect the flight measures, so the shuttle (which adds
@@ -102,7 +119,6 @@ class _StackCardHero extends StatelessWidget {
   }
 }
 
-/// The card itself: a bordered, shadowed page image.
 /// Shown for a group with no pages.
 class _StackPlaceholder extends StatelessWidget {
   const _StackPlaceholder({required this.width, required this.height});

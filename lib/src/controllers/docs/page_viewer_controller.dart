@@ -3,6 +3,10 @@ import 'package:my_reviewer/src/models/docs/view_models.dart';
 import 'package:my_reviewer/src/models/selection_state.dart';
 import 'package:my_reviewer/src/repositories/scanned_document/interface.dart';
 
+/// Whether the page showing is zoomed in. While it is, a horizontal drag
+/// pans the page instead of turning it.
+enum PageZoom { fitted, zoomed }
+
 /// What the page viewer is opened with, as one get_it factory parameter
 /// (get_it passes at most two).
 typedef DocsPageViewerArgs = ({
@@ -50,6 +54,9 @@ class DocsPageViewerController extends ChangeNotifier {
 
   ScannedDocumentModel get currentDoc => _docs[_currentIndex];
 
+  PageZoom _zoom = PageZoom.fitted;
+  PageZoom get zoom => _zoom;
+
   bool _disposed = false;
 
   /// Fetches the group's pages, unless they came with the route.
@@ -90,6 +97,18 @@ class DocsPageViewerController extends ChangeNotifier {
     }
 
     _currentIndex = index;
+    // Pages only turn while fitted, and a newly shown page starts fitted.
+    _zoom = PageZoom.fitted;
+
+    notifyListeners();
+  }
+
+  void setZoom(PageZoom zoom) {
+    if (zoom == _zoom) {
+      return;
+    }
+
+    _zoom = zoom;
 
     notifyListeners();
   }

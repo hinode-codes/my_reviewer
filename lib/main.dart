@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:my_reviewer/src/controllers/settings_controller.dart';
 import 'package:my_reviewer/src/gen/strings.g.dart';
 import 'package:my_reviewer/src/locator.dart';
 import 'package:my_reviewer/src/routes.dart';
+import 'package:my_reviewer/src/services/ui_sound_service.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -11,6 +14,10 @@ void main() {
   LocaleSettings.useDeviceLocale();
 
   setupLocator();
+
+  // Not awaited: the first screen should not wait for audio. Sounds are
+  // silent until loading finishes, well before anyone opens a stack.
+  unawaited(getIt<IUiSoundService>().init());
 
   runApp(
     TranslationProvider(
@@ -45,4 +52,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

@@ -10,7 +10,11 @@ abstract final class DocsUiConstants {
 
   static const double unselectedOpacity = 0.4;
   static const double selectedOpacity = 1.0;
+  /// How far a page in the viewer can be pinched in.
+  static const double viewerMaxScale = 5;
 
+  /// How far a double-tap zooms a page in.
+  static const double viewerDoubleTapScale = 2.5;
   static const Duration animationDuration = Duration(milliseconds: 200);
   static const Duration badgeAnimationDuration = Duration(milliseconds: 150);
 

@@ -12,6 +12,7 @@ import 'package:my_reviewer/src/repositories/scanned_document/impl.dart';
 import 'package:my_reviewer/src/repositories/scanned_document/interface.dart';
 import 'package:my_reviewer/src/services/document_scanner_service.dart';
 import 'package:my_reviewer/src/services/file_storage_service.dart';
+import 'package:my_reviewer/src/services/ui_sound_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -30,6 +31,7 @@ void setupLocator() {
   getIt.registerLazySingleton<IDocumentScannerService>(
     () => MlKitDocumentScannerService(),
   );
+  getIt.registerLazySingleton<IUiSoundService>(() => SoLoudUiSoundService());
 
   getIt.registerFactory<DocsController>(() {
     final repository = getIt<IScannedDocumentRepository>();

@@ -9,19 +9,28 @@ class ThumbnailImage extends StatelessWidget {
 
   final String path;
 
+  /// Cover for grid cards; contain where the whole page must show, as in
+  /// the viewer while its full image loads.
   final BoxFit fit;
+
+  /// The provider every thumbnail of [path] uses. Shared so anything else
+  /// that needs the thumbnail (such as its size) hits the same cache entry
+  /// instead of decoding the file again.
+  static ImageProvider providerFor(String path) => ResizeImage(
+    FileImage(File(path)),
+    width: DocsUiConstants.thumbnailCacheWidth,
+  );
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Image.file(
-      File(path),
+    return Image(
+      image: providerFor(path),
       fit: fit,
       // Keeps the old frame while a rebuilt list re-resolves the same file,
       // so thumbnails do not blink on every stream emission.
       gaplessPlayback: true,
-      cacheWidth: DocsUiConstants.thumbnailCacheWidth,
       errorBuilder: (_, _, _) => ColoredBox(
         color: colorScheme.surfaceContainerHighest,
         child: Icon(

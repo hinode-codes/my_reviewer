@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:my_reviewer/src/utils/stack_layout.dart';
+import 'package:my_reviewer/src/widgets/common/misc/thumbnail/flight_sound.dart';
 
 /// Flies a stacked card while untilting it from [pose].
 ///
@@ -7,12 +8,16 @@ import 'package:my_reviewer/src/utils/stack_layout.dart';
 /// 0 → 1 on push and 1 → 0 on pop. Only the stack side defines a shuttle,
 /// and Flutter uses the destination's shuttle, else the source's, so this
 /// one is used both ways.
+///
+/// [sounds] plays once per flight. Every card of a stack flies at the same
+/// time, so give it to one card only, or the sound plays once per card.
 HeroFlightShuttleBuilder stackCardShuttle({
   required CardPose pose,
   required Widget card,
+  FlightSounds? sounds,
 }) {
   return (flightContext, animation, direction, fromHeroContext, toHeroContext) {
-    return AnimatedBuilder(
+    final shuttle = AnimatedBuilder(
       animation: animation,
       child: card,
       builder: (context, child) {
@@ -24,5 +29,14 @@ HeroFlightShuttleBuilder stackCardShuttle({
         );
       },
     );
+
+    return switch (sounds) {
+      null => shuttle,
+      final sounds => FlightSound(
+        sounds: sounds,
+        direction: direction,
+        child: shuttle,
+      ),
+    };
   };
 }
