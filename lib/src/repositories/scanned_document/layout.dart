@@ -23,7 +23,8 @@ class PlannedPage {
   final String relativePath;
   final String absolutePath;
 
-  String get currentFileNameWithExtension => p.basename(document.relativeFilePath);
+  String get currentFileNameWithExtension =>
+      p.basename(document.relativeFilePath);
   String get targetFileNameWithExtension => p.basename(relativePath);
 }
 
@@ -44,8 +45,7 @@ class ScannedDocumentLayout {
 
   List<String> folderSegments(String folderName) => [rootFolder, folderName];
 
-  String relativeFolderPath(String folderName) =>
-      p.join(rootFolder, folderName);
+  String relativePath(String folderName) => p.join(rootFolder, folderName);
 
   String stagingPathFor(GroupFolder folder, String documentId) =>
       p.join(folder.absolute, '$_renameStagingPrefix$documentId');

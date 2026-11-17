@@ -7,10 +7,7 @@ import 'package:path/path.dart' as p;
 /// Maps database rows to domain models while dynamically resolving runtime
 /// absolute paths.
 class ScannedDocumentRowMapper {
-  const ScannedDocumentRowMapper({
-    required this._dao,
-    required this._storage,
-  });
+  const ScannedDocumentRowMapper({required this._dao, required this._storage});
 
   final ScannedDocumentsDao _dao;
   final FileStorageService _storage;
@@ -33,8 +30,8 @@ class ScannedDocumentRowMapper {
     return ScannedDocumentGroupModel(
       id: row.id,
       groupName: row.name,
-      relativeFolderPath: row.relativeFolderPath,
-      absoluteFolderPath: row.absoluteFolderPath,
+      relativePath: row.relativePath,
+      absolutePath: row.absolutePath,
       documents: await documents(docRows),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -48,17 +45,17 @@ class ScannedDocumentRowMapper {
 
     for (final row in rows) {
       final runtimeAbsolutePath = await _storage.resolveAbsolutePath(
-        row.relativeImagePath,
+        row.relativePath,
       );
 
-      final ext = p.extension(row.relativeImagePath).replaceFirst('.', '');
+      final ext = p.extension(row.relativePath).replaceFirst('.', '');
 
       models.add(
         ScannedDocumentModel(
           id: row.id,
           groupId: row.groupId,
           name: row.name,
-          relativeFilePath: row.relativeImagePath,
+          relativeFilePath: row.relativePath,
           absoluteFilePath: runtimeAbsolutePath,
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,

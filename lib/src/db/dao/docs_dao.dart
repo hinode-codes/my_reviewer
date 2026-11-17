@@ -95,7 +95,7 @@ class ScannedDocumentsDao extends DatabaseAccessor<AppDatabase>
       )..where((t) => t.id.equals(docId))).getSingle();
 
       await (delete(scannedDocuments)..where((t) => t.id.equals(docId))).go();
-      await onDeleteFile(doc.relativeImagePath);
+      await onDeleteFile(doc.relativePath);
     });
   }
 
@@ -118,12 +118,12 @@ class ScannedDocumentsDao extends DatabaseAccessor<AppDatabase>
       final docs = await (select(
         scannedDocuments,
       )..where((t) => t.groupId.equals(groupId))).get();
-      final filePaths = docs.map((d) => d.relativeImagePath).toList();
+      final filePaths = docs.map((d) => d.relativePath).toList();
 
       await (delete(
         scannedDocumentsGroups,
       )..where((t) => t.id.equals(groupId))).go();
-      await onDeleteFiles(filePaths, group.relativeFolderPath);
+      await onDeleteFiles(filePaths, group.relativePath);
     });
   }
 

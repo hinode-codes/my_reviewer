@@ -32,6 +32,28 @@ class $ScannedDocumentsGroupsTable extends ScannedDocumentsGroups
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _relativePathMeta = const VerificationMeta(
+    'relativePath',
+  );
+  @override
+  late final GeneratedColumn<String> relativePath = GeneratedColumn<String>(
+    'relative_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _absolutePathMeta = const VerificationMeta(
+    'absolutePath',
+  );
+  @override
+  late final GeneratedColumn<String> absolutePath = GeneratedColumn<String>(
+    'absolute_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
@@ -55,36 +77,14 @@ class $ScannedDocumentsGroupsTable extends ScannedDocumentsGroups
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _relativeFolderPathMeta =
-      const VerificationMeta('relativeFolderPath');
-  @override
-  late final GeneratedColumn<String> relativeFolderPath =
-      GeneratedColumn<String>(
-        'relative_folder_path',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      );
-  static const VerificationMeta _absoluteFolderPathMeta =
-      const VerificationMeta('absoluteFolderPath');
-  @override
-  late final GeneratedColumn<String> absoluteFolderPath =
-      GeneratedColumn<String>(
-        'absolute_folder_path',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      );
   @override
   List<GeneratedColumn> get $columns => [
     createdAt,
     updatedAt,
+    relativePath,
+    absolutePath,
     id,
     name,
-    relativeFolderPath,
-    absoluteFolderPath,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -110,6 +110,28 @@ class $ScannedDocumentsGroupsTable extends ScannedDocumentsGroups
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
+    if (data.containsKey('relative_path')) {
+      context.handle(
+        _relativePathMeta,
+        relativePath.isAcceptableOrUnknown(
+          data['relative_path']!,
+          _relativePathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_relativePathMeta);
+    }
+    if (data.containsKey('absolute_path')) {
+      context.handle(
+        _absolutePathMeta,
+        absolutePath.isAcceptableOrUnknown(
+          data['absolute_path']!,
+          _absolutePathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_absolutePathMeta);
+    }
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
@@ -120,28 +142,6 @@ class $ScannedDocumentsGroupsTable extends ScannedDocumentsGroups
       );
     } else if (isInserting) {
       context.missing(_nameMeta);
-    }
-    if (data.containsKey('relative_folder_path')) {
-      context.handle(
-        _relativeFolderPathMeta,
-        relativeFolderPath.isAcceptableOrUnknown(
-          data['relative_folder_path']!,
-          _relativeFolderPathMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_relativeFolderPathMeta);
-    }
-    if (data.containsKey('absolute_folder_path')) {
-      context.handle(
-        _absoluteFolderPathMeta,
-        absoluteFolderPath.isAcceptableOrUnknown(
-          data['absolute_folder_path']!,
-          _absoluteFolderPathMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_absoluteFolderPathMeta);
     }
     return context;
   }
@@ -160,6 +160,14 @@ class $ScannedDocumentsGroupsTable extends ScannedDocumentsGroups
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       ),
+      relativePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}relative_path'],
+      )!,
+      absolutePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}absolute_path'],
+      )!,
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -167,14 +175,6 @@ class $ScannedDocumentsGroupsTable extends ScannedDocumentsGroups
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
-      )!,
-      relativeFolderPath: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}relative_folder_path'],
-      )!,
-      absoluteFolderPath: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}absolute_folder_path'],
       )!,
     );
   }
@@ -189,17 +189,17 @@ class ScannedDocumentsGroup extends DataClass
     implements Insertable<ScannedDocumentsGroup> {
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final String relativePath;
+  final String absolutePath;
   final String id;
   final String name;
-  final String relativeFolderPath;
-  final String absoluteFolderPath;
   const ScannedDocumentsGroup({
     required this.createdAt,
     this.updatedAt,
+    required this.relativePath,
+    required this.absolutePath,
     required this.id,
     required this.name,
-    required this.relativeFolderPath,
-    required this.absoluteFolderPath,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -208,10 +208,10 @@ class ScannedDocumentsGroup extends DataClass
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<DateTime>(updatedAt);
     }
+    map['relative_path'] = Variable<String>(relativePath);
+    map['absolute_path'] = Variable<String>(absolutePath);
     map['id'] = Variable<String>(id);
     map['name'] = Variable<String>(name);
-    map['relative_folder_path'] = Variable<String>(relativeFolderPath);
-    map['absolute_folder_path'] = Variable<String>(absoluteFolderPath);
     return map;
   }
 
@@ -221,10 +221,10 @@ class ScannedDocumentsGroup extends DataClass
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(updatedAt),
+      relativePath: Value(relativePath),
+      absolutePath: Value(absolutePath),
       id: Value(id),
       name: Value(name),
-      relativeFolderPath: Value(relativeFolderPath),
-      absoluteFolderPath: Value(absoluteFolderPath),
     );
   }
 
@@ -236,14 +236,10 @@ class ScannedDocumentsGroup extends DataClass
     return ScannedDocumentsGroup(
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
+      relativePath: serializer.fromJson<String>(json['relativePath']),
+      absolutePath: serializer.fromJson<String>(json['absolutePath']),
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
-      relativeFolderPath: serializer.fromJson<String>(
-        json['relativeFolderPath'],
-      ),
-      absoluteFolderPath: serializer.fromJson<String>(
-        json['absoluteFolderPath'],
-      ),
     );
   }
   @override
@@ -252,27 +248,27 @@ class ScannedDocumentsGroup extends DataClass
     return <String, dynamic>{
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
+      'relativePath': serializer.toJson<String>(relativePath),
+      'absolutePath': serializer.toJson<String>(absolutePath),
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
-      'relativeFolderPath': serializer.toJson<String>(relativeFolderPath),
-      'absoluteFolderPath': serializer.toJson<String>(absoluteFolderPath),
     };
   }
 
   ScannedDocumentsGroup copyWith({
     DateTime? createdAt,
     Value<DateTime?> updatedAt = const Value.absent(),
+    String? relativePath,
+    String? absolutePath,
     String? id,
     String? name,
-    String? relativeFolderPath,
-    String? absoluteFolderPath,
   }) => ScannedDocumentsGroup(
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
+    relativePath: relativePath ?? this.relativePath,
+    absolutePath: absolutePath ?? this.absolutePath,
     id: id ?? this.id,
     name: name ?? this.name,
-    relativeFolderPath: relativeFolderPath ?? this.relativeFolderPath,
-    absoluteFolderPath: absoluteFolderPath ?? this.absoluteFolderPath,
   );
   ScannedDocumentsGroup copyWithCompanion(
     ScannedDocumentsGroupsCompanion data,
@@ -280,14 +276,14 @@ class ScannedDocumentsGroup extends DataClass
     return ScannedDocumentsGroup(
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      relativePath: data.relativePath.present
+          ? data.relativePath.value
+          : this.relativePath,
+      absolutePath: data.absolutePath.present
+          ? data.absolutePath.value
+          : this.absolutePath,
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
-      relativeFolderPath: data.relativeFolderPath.present
-          ? data.relativeFolderPath.value
-          : this.relativeFolderPath,
-      absoluteFolderPath: data.absoluteFolderPath.present
-          ? data.absoluteFolderPath.value
-          : this.absoluteFolderPath,
     );
   }
 
@@ -296,82 +292,74 @@ class ScannedDocumentsGroup extends DataClass
     return (StringBuffer('ScannedDocumentsGroup(')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('relativePath: $relativePath, ')
+          ..write('absolutePath: $absolutePath, ')
           ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('relativeFolderPath: $relativeFolderPath, ')
-          ..write('absoluteFolderPath: $absoluteFolderPath')
+          ..write('name: $name')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-    createdAt,
-    updatedAt,
-    id,
-    name,
-    relativeFolderPath,
-    absoluteFolderPath,
-  );
+  int get hashCode =>
+      Object.hash(createdAt, updatedAt, relativePath, absolutePath, id, name);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ScannedDocumentsGroup &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
+          other.relativePath == this.relativePath &&
+          other.absolutePath == this.absolutePath &&
           other.id == this.id &&
-          other.name == this.name &&
-          other.relativeFolderPath == this.relativeFolderPath &&
-          other.absoluteFolderPath == this.absoluteFolderPath);
+          other.name == this.name);
 }
 
 class ScannedDocumentsGroupsCompanion
     extends UpdateCompanion<ScannedDocumentsGroup> {
   final Value<DateTime> createdAt;
   final Value<DateTime?> updatedAt;
+  final Value<String> relativePath;
+  final Value<String> absolutePath;
   final Value<String> id;
   final Value<String> name;
-  final Value<String> relativeFolderPath;
-  final Value<String> absoluteFolderPath;
   final Value<int> rowid;
   const ScannedDocumentsGroupsCompanion({
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.relativePath = const Value.absent(),
+    this.absolutePath = const Value.absent(),
     this.id = const Value.absent(),
     this.name = const Value.absent(),
-    this.relativeFolderPath = const Value.absent(),
-    this.absoluteFolderPath = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ScannedDocumentsGroupsCompanion.insert({
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    required String relativePath,
+    required String absolutePath,
     this.id = const Value.absent(),
     required String name,
-    required String relativeFolderPath,
-    required String absoluteFolderPath,
     this.rowid = const Value.absent(),
-  }) : name = Value(name),
-       relativeFolderPath = Value(relativeFolderPath),
-       absoluteFolderPath = Value(absoluteFolderPath);
+  }) : relativePath = Value(relativePath),
+       absolutePath = Value(absolutePath),
+       name = Value(name);
   static Insertable<ScannedDocumentsGroup> custom({
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<String>? relativePath,
+    Expression<String>? absolutePath,
     Expression<String>? id,
     Expression<String>? name,
-    Expression<String>? relativeFolderPath,
-    Expression<String>? absoluteFolderPath,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (relativePath != null) 'relative_path': relativePath,
+      if (absolutePath != null) 'absolute_path': absolutePath,
       if (id != null) 'id': id,
       if (name != null) 'name': name,
-      if (relativeFolderPath != null)
-        'relative_folder_path': relativeFolderPath,
-      if (absoluteFolderPath != null)
-        'absolute_folder_path': absoluteFolderPath,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -379,19 +367,19 @@ class ScannedDocumentsGroupsCompanion
   ScannedDocumentsGroupsCompanion copyWith({
     Value<DateTime>? createdAt,
     Value<DateTime?>? updatedAt,
+    Value<String>? relativePath,
+    Value<String>? absolutePath,
     Value<String>? id,
     Value<String>? name,
-    Value<String>? relativeFolderPath,
-    Value<String>? absoluteFolderPath,
     Value<int>? rowid,
   }) {
     return ScannedDocumentsGroupsCompanion(
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      relativePath: relativePath ?? this.relativePath,
+      absolutePath: absolutePath ?? this.absolutePath,
       id: id ?? this.id,
       name: name ?? this.name,
-      relativeFolderPath: relativeFolderPath ?? this.relativeFolderPath,
-      absoluteFolderPath: absoluteFolderPath ?? this.absoluteFolderPath,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -405,17 +393,17 @@ class ScannedDocumentsGroupsCompanion
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (relativePath.present) {
+      map['relative_path'] = Variable<String>(relativePath.value);
+    }
+    if (absolutePath.present) {
+      map['absolute_path'] = Variable<String>(absolutePath.value);
+    }
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
-    }
-    if (relativeFolderPath.present) {
-      map['relative_folder_path'] = Variable<String>(relativeFolderPath.value);
-    }
-    if (absoluteFolderPath.present) {
-      map['absolute_folder_path'] = Variable<String>(absoluteFolderPath.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -428,10 +416,10 @@ class ScannedDocumentsGroupsCompanion
     return (StringBuffer('ScannedDocumentsGroupsCompanion(')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('relativePath: $relativePath, ')
+          ..write('absolutePath: $absolutePath, ')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('relativeFolderPath: $relativeFolderPath, ')
-          ..write('absoluteFolderPath: $absoluteFolderPath, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -466,6 +454,41 @@ class $ScannedDocumentsTable extends ScannedDocuments
     true,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
+  );
+  static const VerificationMeta _relativePathMeta = const VerificationMeta(
+    'relativePath',
+  );
+  @override
+  late final GeneratedColumn<String> relativePath = GeneratedColumn<String>(
+    'relative_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _absolutePathMeta = const VerificationMeta(
+    'absolutePath',
+  );
+  @override
+  late final GeneratedColumn<String> absolutePath = GeneratedColumn<String>(
+    'absolute_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _extMeta = const VerificationMeta('ext');
+  @override
+  late final GeneratedColumn<String> ext = GeneratedColumn<String>(
+    'ext',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 10,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
   );
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
@@ -504,39 +527,16 @@ class $ScannedDocumentsTable extends ScannedDocuments
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _relativeImagePathMeta = const VerificationMeta(
-    'relativeImagePath',
-  );
-  @override
-  late final GeneratedColumn<String> relativeImagePath =
-      GeneratedColumn<String>(
-        'relative_image_path',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      );
-  static const VerificationMeta _absoluteImagePathMeta = const VerificationMeta(
-    'absoluteImagePath',
-  );
-  @override
-  late final GeneratedColumn<String> absoluteImagePath =
-      GeneratedColumn<String>(
-        'absolute_image_path',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      );
   @override
   List<GeneratedColumn> get $columns => [
     createdAt,
     updatedAt,
+    relativePath,
+    absolutePath,
+    ext,
     id,
     groupId,
     name,
-    relativeImagePath,
-    absoluteImagePath,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -562,6 +562,36 @@ class $ScannedDocumentsTable extends ScannedDocuments
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
+    if (data.containsKey('relative_path')) {
+      context.handle(
+        _relativePathMeta,
+        relativePath.isAcceptableOrUnknown(
+          data['relative_path']!,
+          _relativePathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_relativePathMeta);
+    }
+    if (data.containsKey('absolute_path')) {
+      context.handle(
+        _absolutePathMeta,
+        absolutePath.isAcceptableOrUnknown(
+          data['absolute_path']!,
+          _absolutePathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_absolutePathMeta);
+    }
+    if (data.containsKey('ext')) {
+      context.handle(
+        _extMeta,
+        ext.isAcceptableOrUnknown(data['ext']!, _extMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_extMeta);
+    }
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
@@ -581,28 +611,6 @@ class $ScannedDocumentsTable extends ScannedDocuments
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
-    if (data.containsKey('relative_image_path')) {
-      context.handle(
-        _relativeImagePathMeta,
-        relativeImagePath.isAcceptableOrUnknown(
-          data['relative_image_path']!,
-          _relativeImagePathMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_relativeImagePathMeta);
-    }
-    if (data.containsKey('absolute_image_path')) {
-      context.handle(
-        _absoluteImagePathMeta,
-        absoluteImagePath.isAcceptableOrUnknown(
-          data['absolute_image_path']!,
-          _absoluteImagePathMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_absoluteImagePathMeta);
-    }
     return context;
   }
 
@@ -620,6 +628,18 @@ class $ScannedDocumentsTable extends ScannedDocuments
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       ),
+      relativePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}relative_path'],
+      )!,
+      absolutePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}absolute_path'],
+      )!,
+      ext: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ext'],
+      )!,
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -631,14 +651,6 @@ class $ScannedDocumentsTable extends ScannedDocuments
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}name'],
-      )!,
-      relativeImagePath: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}relative_image_path'],
-      )!,
-      absoluteImagePath: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}absolute_image_path'],
       )!,
     );
   }
@@ -652,19 +664,21 @@ class $ScannedDocumentsTable extends ScannedDocuments
 class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final String relativePath;
+  final String absolutePath;
+  final String ext;
   final String id;
   final String groupId;
   final String name;
-  final String relativeImagePath;
-  final String absoluteImagePath;
   const ScannedDocument({
     required this.createdAt,
     this.updatedAt,
+    required this.relativePath,
+    required this.absolutePath,
+    required this.ext,
     required this.id,
     required this.groupId,
     required this.name,
-    required this.relativeImagePath,
-    required this.absoluteImagePath,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -673,11 +687,12 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<DateTime>(updatedAt);
     }
+    map['relative_path'] = Variable<String>(relativePath);
+    map['absolute_path'] = Variable<String>(absolutePath);
+    map['ext'] = Variable<String>(ext);
     map['id'] = Variable<String>(id);
     map['group_id'] = Variable<String>(groupId);
     map['name'] = Variable<String>(name);
-    map['relative_image_path'] = Variable<String>(relativeImagePath);
-    map['absolute_image_path'] = Variable<String>(absoluteImagePath);
     return map;
   }
 
@@ -687,11 +702,12 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(updatedAt),
+      relativePath: Value(relativePath),
+      absolutePath: Value(absolutePath),
+      ext: Value(ext),
       id: Value(id),
       groupId: Value(groupId),
       name: Value(name),
-      relativeImagePath: Value(relativeImagePath),
-      absoluteImagePath: Value(absoluteImagePath),
     );
   }
 
@@ -703,11 +719,12 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
     return ScannedDocument(
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
+      relativePath: serializer.fromJson<String>(json['relativePath']),
+      absolutePath: serializer.fromJson<String>(json['absolutePath']),
+      ext: serializer.fromJson<String>(json['ext']),
       id: serializer.fromJson<String>(json['id']),
       groupId: serializer.fromJson<String>(json['groupId']),
       name: serializer.fromJson<String>(json['name']),
-      relativeImagePath: serializer.fromJson<String>(json['relativeImagePath']),
-      absoluteImagePath: serializer.fromJson<String>(json['absoluteImagePath']),
     );
   }
   @override
@@ -716,44 +733,48 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
     return <String, dynamic>{
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
+      'relativePath': serializer.toJson<String>(relativePath),
+      'absolutePath': serializer.toJson<String>(absolutePath),
+      'ext': serializer.toJson<String>(ext),
       'id': serializer.toJson<String>(id),
       'groupId': serializer.toJson<String>(groupId),
       'name': serializer.toJson<String>(name),
-      'relativeImagePath': serializer.toJson<String>(relativeImagePath),
-      'absoluteImagePath': serializer.toJson<String>(absoluteImagePath),
     };
   }
 
   ScannedDocument copyWith({
     DateTime? createdAt,
     Value<DateTime?> updatedAt = const Value.absent(),
+    String? relativePath,
+    String? absolutePath,
+    String? ext,
     String? id,
     String? groupId,
     String? name,
-    String? relativeImagePath,
-    String? absoluteImagePath,
   }) => ScannedDocument(
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
+    relativePath: relativePath ?? this.relativePath,
+    absolutePath: absolutePath ?? this.absolutePath,
+    ext: ext ?? this.ext,
     id: id ?? this.id,
     groupId: groupId ?? this.groupId,
     name: name ?? this.name,
-    relativeImagePath: relativeImagePath ?? this.relativeImagePath,
-    absoluteImagePath: absoluteImagePath ?? this.absoluteImagePath,
   );
   ScannedDocument copyWithCompanion(ScannedDocumentsCompanion data) {
     return ScannedDocument(
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      relativePath: data.relativePath.present
+          ? data.relativePath.value
+          : this.relativePath,
+      absolutePath: data.absolutePath.present
+          ? data.absolutePath.value
+          : this.absolutePath,
+      ext: data.ext.present ? data.ext.value : this.ext,
       id: data.id.present ? data.id.value : this.id,
       groupId: data.groupId.present ? data.groupId.value : this.groupId,
       name: data.name.present ? data.name.value : this.name,
-      relativeImagePath: data.relativeImagePath.present
-          ? data.relativeImagePath.value
-          : this.relativeImagePath,
-      absoluteImagePath: data.absoluteImagePath.present
-          ? data.absoluteImagePath.value
-          : this.absoluteImagePath,
     );
   }
 
@@ -762,11 +783,12 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
     return (StringBuffer('ScannedDocument(')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('relativePath: $relativePath, ')
+          ..write('absolutePath: $absolutePath, ')
+          ..write('ext: $ext, ')
           ..write('id: $id, ')
           ..write('groupId: $groupId, ')
-          ..write('name: $name, ')
-          ..write('relativeImagePath: $relativeImagePath, ')
-          ..write('absoluteImagePath: $absoluteImagePath')
+          ..write('name: $name')
           ..write(')'))
         .toString();
   }
@@ -775,11 +797,12 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
   int get hashCode => Object.hash(
     createdAt,
     updatedAt,
+    relativePath,
+    absolutePath,
+    ext,
     id,
     groupId,
     name,
-    relativeImagePath,
-    absoluteImagePath,
   );
   @override
   bool operator ==(Object other) =>
@@ -787,63 +810,70 @@ class ScannedDocument extends DataClass implements Insertable<ScannedDocument> {
       (other is ScannedDocument &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
+          other.relativePath == this.relativePath &&
+          other.absolutePath == this.absolutePath &&
+          other.ext == this.ext &&
           other.id == this.id &&
           other.groupId == this.groupId &&
-          other.name == this.name &&
-          other.relativeImagePath == this.relativeImagePath &&
-          other.absoluteImagePath == this.absoluteImagePath);
+          other.name == this.name);
 }
 
 class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
   final Value<DateTime> createdAt;
   final Value<DateTime?> updatedAt;
+  final Value<String> relativePath;
+  final Value<String> absolutePath;
+  final Value<String> ext;
   final Value<String> id;
   final Value<String> groupId;
   final Value<String> name;
-  final Value<String> relativeImagePath;
-  final Value<String> absoluteImagePath;
   final Value<int> rowid;
   const ScannedDocumentsCompanion({
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.relativePath = const Value.absent(),
+    this.absolutePath = const Value.absent(),
+    this.ext = const Value.absent(),
     this.id = const Value.absent(),
     this.groupId = const Value.absent(),
     this.name = const Value.absent(),
-    this.relativeImagePath = const Value.absent(),
-    this.absoluteImagePath = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ScannedDocumentsCompanion.insert({
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    required String relativePath,
+    required String absolutePath,
+    required String ext,
     this.id = const Value.absent(),
     required String groupId,
     required String name,
-    required String relativeImagePath,
-    required String absoluteImagePath,
     this.rowid = const Value.absent(),
-  }) : groupId = Value(groupId),
-       name = Value(name),
-       relativeImagePath = Value(relativeImagePath),
-       absoluteImagePath = Value(absoluteImagePath);
+  }) : relativePath = Value(relativePath),
+       absolutePath = Value(absolutePath),
+       ext = Value(ext),
+       groupId = Value(groupId),
+       name = Value(name);
   static Insertable<ScannedDocument> custom({
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<String>? relativePath,
+    Expression<String>? absolutePath,
+    Expression<String>? ext,
     Expression<String>? id,
     Expression<String>? groupId,
     Expression<String>? name,
-    Expression<String>? relativeImagePath,
-    Expression<String>? absoluteImagePath,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (relativePath != null) 'relative_path': relativePath,
+      if (absolutePath != null) 'absolute_path': absolutePath,
+      if (ext != null) 'ext': ext,
       if (id != null) 'id': id,
       if (groupId != null) 'group_id': groupId,
       if (name != null) 'name': name,
-      if (relativeImagePath != null) 'relative_image_path': relativeImagePath,
-      if (absoluteImagePath != null) 'absolute_image_path': absoluteImagePath,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -851,21 +881,23 @@ class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
   ScannedDocumentsCompanion copyWith({
     Value<DateTime>? createdAt,
     Value<DateTime?>? updatedAt,
+    Value<String>? relativePath,
+    Value<String>? absolutePath,
+    Value<String>? ext,
     Value<String>? id,
     Value<String>? groupId,
     Value<String>? name,
-    Value<String>? relativeImagePath,
-    Value<String>? absoluteImagePath,
     Value<int>? rowid,
   }) {
     return ScannedDocumentsCompanion(
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      relativePath: relativePath ?? this.relativePath,
+      absolutePath: absolutePath ?? this.absolutePath,
+      ext: ext ?? this.ext,
       id: id ?? this.id,
       groupId: groupId ?? this.groupId,
       name: name ?? this.name,
-      relativeImagePath: relativeImagePath ?? this.relativeImagePath,
-      absoluteImagePath: absoluteImagePath ?? this.absoluteImagePath,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -879,6 +911,15 @@ class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (relativePath.present) {
+      map['relative_path'] = Variable<String>(relativePath.value);
+    }
+    if (absolutePath.present) {
+      map['absolute_path'] = Variable<String>(absolutePath.value);
+    }
+    if (ext.present) {
+      map['ext'] = Variable<String>(ext.value);
+    }
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
@@ -887,12 +928,6 @@ class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
-    }
-    if (relativeImagePath.present) {
-      map['relative_image_path'] = Variable<String>(relativeImagePath.value);
-    }
-    if (absoluteImagePath.present) {
-      map['absolute_image_path'] = Variable<String>(absoluteImagePath.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -905,11 +940,12 @@ class ScannedDocumentsCompanion extends UpdateCompanion<ScannedDocument> {
     return (StringBuffer('ScannedDocumentsCompanion(')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('relativePath: $relativePath, ')
+          ..write('absolutePath: $absolutePath, ')
+          ..write('ext: $ext, ')
           ..write('id: $id, ')
           ..write('groupId: $groupId, ')
           ..write('name: $name, ')
-          ..write('relativeImagePath: $relativeImagePath, ')
-          ..write('absoluteImagePath: $absoluteImagePath, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1290,20 +1326,20 @@ typedef $$ScannedDocumentsGroupsTableCreateCompanionBuilder =
     ScannedDocumentsGroupsCompanion Function({
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
+      required String relativePath,
+      required String absolutePath,
       Value<String> id,
       required String name,
-      required String relativeFolderPath,
-      required String absoluteFolderPath,
       Value<int> rowid,
     });
 typedef $$ScannedDocumentsGroupsTableUpdateCompanionBuilder =
     ScannedDocumentsGroupsCompanion Function({
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
+      Value<String> relativePath,
+      Value<String> absolutePath,
       Value<String> id,
       Value<String> name,
-      Value<String> relativeFolderPath,
-      Value<String> absoluteFolderPath,
       Value<int> rowid,
     });
 
@@ -1360,6 +1396,16 @@ class $$ScannedDocumentsGroupsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get absolutePath => $composableBuilder(
+    column: $table.absolutePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
@@ -1367,16 +1413,6 @@ class $$ScannedDocumentsGroupsTableFilterComposer
 
   ColumnFilters<String> get name => $composableBuilder(
     column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get relativeFolderPath => $composableBuilder(
-    column: $table.relativeFolderPath,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get absoluteFolderPath => $composableBuilder(
-    column: $table.absoluteFolderPath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1425,6 +1461,16 @@ class $$ScannedDocumentsGroupsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get absolutePath => $composableBuilder(
+    column: $table.absolutePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
@@ -1432,16 +1478,6 @@ class $$ScannedDocumentsGroupsTableOrderingComposer
 
   ColumnOrderings<String> get name => $composableBuilder(
     column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get relativeFolderPath => $composableBuilder(
-    column: $table.relativeFolderPath,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get absoluteFolderPath => $composableBuilder(
-    column: $table.absoluteFolderPath,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -1461,21 +1497,21 @@ class $$ScannedDocumentsGroupsTableAnnotationComposer
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
+  GeneratedColumn<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get absolutePath => $composableBuilder(
+    column: $table.absolutePath,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get relativeFolderPath => $composableBuilder(
-    column: $table.relativeFolderPath,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get absoluteFolderPath => $composableBuilder(
-    column: $table.absoluteFolderPath,
-    builder: (column) => column,
-  );
 
   Expression<T> scannedDocumentsRefs<T extends Object>(
     Expression<T> Function($$ScannedDocumentsTableAnnotationComposer a) f,
@@ -1544,36 +1580,36 @@ class $$ScannedDocumentsGroupsTableTableManager
               ({
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
+                Value<String> relativePath = const Value.absent(),
+                Value<String> absolutePath = const Value.absent(),
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
-                Value<String> relativeFolderPath = const Value.absent(),
-                Value<String> absoluteFolderPath = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ScannedDocumentsGroupsCompanion(
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                relativePath: relativePath,
+                absolutePath: absolutePath,
                 id: id,
                 name: name,
-                relativeFolderPath: relativeFolderPath,
-                absoluteFolderPath: absoluteFolderPath,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
+                required String relativePath,
+                required String absolutePath,
                 Value<String> id = const Value.absent(),
                 required String name,
-                required String relativeFolderPath,
-                required String absoluteFolderPath,
                 Value<int> rowid = const Value.absent(),
               }) => ScannedDocumentsGroupsCompanion.insert(
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                relativePath: relativePath,
+                absolutePath: absolutePath,
                 id: id,
                 name: name,
-                relativeFolderPath: relativeFolderPath,
-                absoluteFolderPath: absoluteFolderPath,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -1642,22 +1678,24 @@ typedef $$ScannedDocumentsTableCreateCompanionBuilder =
     ScannedDocumentsCompanion Function({
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
+      required String relativePath,
+      required String absolutePath,
+      required String ext,
       Value<String> id,
       required String groupId,
       required String name,
-      required String relativeImagePath,
-      required String absoluteImagePath,
       Value<int> rowid,
     });
 typedef $$ScannedDocumentsTableUpdateCompanionBuilder =
     ScannedDocumentsCompanion Function({
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
+      Value<String> relativePath,
+      Value<String> absolutePath,
+      Value<String> ext,
       Value<String> id,
       Value<String> groupId,
       Value<String> name,
-      Value<String> relativeImagePath,
-      Value<String> absoluteImagePath,
       Value<int> rowid,
     });
 
@@ -1708,6 +1746,21 @@ class $$ScannedDocumentsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get absolutePath => $composableBuilder(
+    column: $table.absolutePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ext => $composableBuilder(
+    column: $table.ext,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
@@ -1715,16 +1768,6 @@ class $$ScannedDocumentsTableFilterComposer
 
   ColumnFilters<String> get name => $composableBuilder(
     column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get relativeImagePath => $composableBuilder(
-    column: $table.relativeImagePath,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get absoluteImagePath => $composableBuilder(
-    column: $table.absoluteImagePath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1772,6 +1815,21 @@ class $$ScannedDocumentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get absolutePath => $composableBuilder(
+    column: $table.absolutePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ext => $composableBuilder(
+    column: $table.ext,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnOrderings(column),
@@ -1779,16 +1837,6 @@ class $$ScannedDocumentsTableOrderingComposer
 
   ColumnOrderings<String> get name => $composableBuilder(
     column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get relativeImagePath => $composableBuilder(
-    column: $table.relativeImagePath,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get absoluteImagePath => $composableBuilder(
-    column: $table.absoluteImagePath,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -1832,21 +1880,24 @@ class $$ScannedDocumentsTableAnnotationComposer
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
+  GeneratedColumn<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get absolutePath => $composableBuilder(
+    column: $table.absolutePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ext =>
+      $composableBuilder(column: $table.ext, builder: (column) => column);
+
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get relativeImagePath => $composableBuilder(
-    column: $table.relativeImagePath,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get absoluteImagePath => $composableBuilder(
-    column: $table.absoluteImagePath,
-    builder: (column) => column,
-  );
 
   $$ScannedDocumentsGroupsTableAnnotationComposer get groupId {
     final $$ScannedDocumentsGroupsTableAnnotationComposer composer =
@@ -1905,40 +1956,44 @@ class $$ScannedDocumentsTableTableManager
               ({
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
+                Value<String> relativePath = const Value.absent(),
+                Value<String> absolutePath = const Value.absent(),
+                Value<String> ext = const Value.absent(),
                 Value<String> id = const Value.absent(),
                 Value<String> groupId = const Value.absent(),
                 Value<String> name = const Value.absent(),
-                Value<String> relativeImagePath = const Value.absent(),
-                Value<String> absoluteImagePath = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ScannedDocumentsCompanion(
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                relativePath: relativePath,
+                absolutePath: absolutePath,
+                ext: ext,
                 id: id,
                 groupId: groupId,
                 name: name,
-                relativeImagePath: relativeImagePath,
-                absoluteImagePath: absoluteImagePath,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
+                required String relativePath,
+                required String absolutePath,
+                required String ext,
                 Value<String> id = const Value.absent(),
                 required String groupId,
                 required String name,
-                required String relativeImagePath,
-                required String absoluteImagePath,
                 Value<int> rowid = const Value.absent(),
               }) => ScannedDocumentsCompanion.insert(
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                relativePath: relativePath,
+                absolutePath: absolutePath,
+                ext: ext,
                 id: id,
                 groupId: groupId,
                 name: name,
-                relativeImagePath: relativeImagePath,
-                absoluteImagePath: absoluteImagePath,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

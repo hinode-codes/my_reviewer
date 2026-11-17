@@ -65,7 +65,7 @@ class LocalScannedDocumentRepository implements IScannedDocumentRepository {
     );
     final GroupFolder folder = (
       name: folderName,
-      relative: _layout.relativeFolderPath(folderName),
+      relative: _layout.relativePath(folderName),
       absolute: groupDir.path,
     );
     final journal = FileChangeJournal(storageService);
@@ -82,8 +82,8 @@ class LocalScannedDocumentRepository implements IScannedDocumentRepository {
         group: ScannedDocumentsGroupsCompanion.insert(
           id: Value(groupID),
           name: groupName,
-          relativeFolderPath: folder.relative,
-          absoluteFolderPath: folder.absolute,
+          relativePath: folder.relative,
+          absolutePath: folder.absolute,
         ),
         documents: [for (final page in pages) _insertCompanion(groupID, page)],
         onFileStorage: () => _copyPages(
@@ -138,20 +138,20 @@ class LocalScannedDocumentRepository implements IScannedDocumentRepository {
       for (final row in await dao.getDocumentsForGroup(groupId)) row.id: row,
     };
 
-    final oldFolderName = p.basename(group.relativeFolderPath);
+    final oldFolderName = p.basename(group.relativePath);
     final folderName = await _layout.claimFolderName(
       groupName,
       groupId,
       current: oldFolderName,
     );
     final oldFolderPath = await storageService.resolveAbsolutePath(
-      group.relativeFolderPath,
+      group.relativePath,
     );
-    final relativeFolderPath = _layout.relativeFolderPath(folderName);
+    final relativePath = _layout.relativePath(folderName);
     final GroupFolder folder = (
       name: folderName,
-      relative: relativeFolderPath,
-      absolute: await storageService.resolveAbsolutePath(relativeFolderPath),
+      relative: relativePath,
+      absolute: await storageService.resolveAbsolutePath(relativePath),
     );
 
     // Planned from a clean slate rather than from what is on disk, so two
@@ -188,7 +188,7 @@ class LocalScannedDocumentRepository implements IScannedDocumentRepository {
     final removedFiles = [
       for (final row in removedRows)
         (
-          from: p.join(folder.absolute, p.basename(row.relativeImagePath)),
+          from: p.join(folder.absolute, p.basename(row.relativePath)),
           staging: _layout.stagingPathFor(folder, row.id),
         ),
     ];
@@ -393,10 +393,10 @@ class LocalScannedDocumentRepository implements IScannedDocumentRepository {
     await dao.hardDeleteGroup(
       groupId,
       onDeleteFiles: (relativePaths, relativeGroupFolderPath) async {
-        final absoluteFolderPath = await storageService.resolveAbsolutePath(
+        final absolutePath = await storageService.resolveAbsolutePath(
           relativeGroupFolderPath,
         );
-        await storageService.delete(absoluteFolderPath, recursive: true);
+        await storageService.delete(absolutePath, recursive: true);
       },
     );
   }
@@ -433,8 +433,8 @@ class LocalScannedDocumentRepository implements IScannedDocumentRepository {
 
     return ScannedDocumentsGroupsCompanion(
       name: Value(groupName),
-      relativeFolderPath: Value(folder.relative),
-      absoluteFolderPath: Value(folder.absolute),
+      relativePath: Value(folder.relative),
+      absolutePath: Value(folder.absolute),
       updatedAt: Value(now),
     );
   }
@@ -450,8 +450,8 @@ class LocalScannedDocumentRepository implements IScannedDocumentRepository {
         if (_hasChanged(storedRows[page.document.id], page))
           page.document.id: ScannedDocumentsCompanion(
             name: Value(page.document.name),
-            relativeImagePath: Value(page.relativePath),
-            absoluteImagePath: Value(page.absolutePath),
+            relativePath: Value(page.relativePath),
+            absolutePath: Value(page.absolutePath),
             updatedAt: Value(now),
           ),
     };
@@ -460,15 +460,18 @@ class LocalScannedDocumentRepository implements IScannedDocumentRepository {
   bool _hasChanged(ScannedDocument? stored, PlannedPage page) =>
       stored == null ||
       stored.name != page.document.name ||
-      stored.relativeImagePath != page.relativePath;
+      stored.relativePath != page.relativePath;
 
   ScannedDocumentsCompanion _insertCompanion(String groupId, PlannedPage page) {
     return ScannedDocumentsCompanion.insert(
       id: Value(page.document.id),
       groupId: groupId,
       name: page.document.name,
-      relativeImagePath: page.relativePath,
-      absoluteImagePath: page.absolutePath,
+      relativePath: page.relativePath,
+      absolutePath: page.absolutePath,
+      ext: page.absolutePath.isNotEmpty
+          ? p.extension(page.absolutePath).replaceFirst('.', '')
+          : '',
     );
   }
 

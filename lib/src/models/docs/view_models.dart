@@ -4,8 +4,8 @@ import 'package:my_reviewer/src/utils/string.dart';
 class ScannedDocumentGroupModel {
   final String id;
   final String groupName;
-  final String relativeFolderPath;
-  final String absoluteFolderPath;
+  final String relativePath;
+  final String absolutePath;
   final List<ScannedDocumentModel> documents;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -13,8 +13,8 @@ class ScannedDocumentGroupModel {
   const ScannedDocumentGroupModel({
     required this.id,
     required this.groupName,
-    required this.relativeFolderPath,
-    required this.absoluteFolderPath,
+    required this.relativePath,
+    required this.absolutePath,
     this.documents = const [],
     required this.createdAt,
     this.updatedAt,
@@ -26,8 +26,8 @@ class ScannedDocumentGroupModel {
       other is ScannedDocumentGroupModel &&
           other.id == id &&
           other.groupName == groupName &&
-          other.relativeFolderPath == relativeFolderPath &&
-          other.absoluteFolderPath == absoluteFolderPath &&
+          other.relativePath == relativePath &&
+          other.absolutePath == absolutePath &&
           listEquals(other.documents, documents) &&
           other.createdAt == createdAt &&
           other.updatedAt == updatedAt;
@@ -36,8 +36,8 @@ class ScannedDocumentGroupModel {
   int get hashCode => Object.hash(
     id,
     groupName,
-    relativeFolderPath,
-    absoluteFolderPath,
+    relativePath,
+    absolutePath,
     Object.hashAll(documents),
     createdAt,
     updatedAt,

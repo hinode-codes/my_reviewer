@@ -37,7 +37,7 @@ void main() {
   tearDown(() => storage.dispose());
 
   GroupFolder folderNamed(String name) {
-    final relative = layout.relativeFolderPath(name);
+    final relative = layout.relativePath(name);
     return (name: name, relative: relative, absolute: storage.pathOf(relative));
   }
 
@@ -49,7 +49,7 @@ void main() {
   group('paths', () {
     test('every group folder lives under the root folder', () {
       expect(layout.folderSegments('Biology'), [_root, 'Biology']);
-      expect(layout.relativeFolderPath('Biology'), p.join(_root, 'Biology'));
+      expect(layout.relativePath('Biology'), p.join(_root, 'Biology'));
     });
 
     test('staging paths sit inside the folder, hidden, one per document', () {

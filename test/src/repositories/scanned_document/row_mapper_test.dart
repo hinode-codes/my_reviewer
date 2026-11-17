@@ -40,8 +40,8 @@ void main() {
       group: ScannedDocumentsGroupsCompanion.insert(
         id: Value(id),
         name: 'Group $id',
-        relativeFolderPath: folder,
-        absoluteFolderPath: p.join(_oldContainer, folder),
+        relativePath: folder,
+        absolutePath: p.join(_oldContainer, folder),
       ),
       documents: [
         for (final (docId, relative) in pages)
@@ -49,8 +49,9 @@ void main() {
             id: Value(docId),
             groupId: id,
             name: 'Page $docId',
-            relativeImagePath: relative,
-            absoluteImagePath: p.join(_oldContainer, relative),
+            relativePath: relative,
+            absolutePath: p.join(_oldContainer, relative),
+            ext: p.extension(relative).replaceFirst('.', ''),
           ),
       ],
       onFileStorage: () async {},
@@ -58,12 +59,13 @@ void main() {
   }
 
   group('documents', () {
-    test('resolves image paths against the current documents folder',
-        () async {
+    test('resolves image paths against the current documents folder', () async {
       final relative = p.join('scanned_documents', 'g1', 'a.jpg');
       await insertGroup('g1', pages: [('d1', relative)]);
 
-      final [doc] = await mapper.documents(await dao.getDocumentsForGroup('g1'));
+      final [doc] = await mapper.documents(
+        await dao.getDocumentsForGroup('g1'),
+      );
 
       expect(doc.absoluteFilePath, storage.pathOf(relative));
       expect(doc.absoluteFilePath, isNot(startsWith(_oldContainer)));
@@ -71,11 +73,14 @@ void main() {
     });
 
     test('takes the extension from the file name, without the dot', () async {
-      await insertGroup('g1', pages: [
-        ('d1', p.join('scanned_documents', 'g1', 'a.jpg')),
-        ('d2', p.join('scanned_documents', 'g1', 'b.png')),
-        ('d3', p.join('scanned_documents', 'g1', 'c')),
-      ]);
+      await insertGroup(
+        'g1',
+        pages: [
+          ('d1', p.join('scanned_documents', 'g1', 'a.jpg')),
+          ('d2', p.join('scanned_documents', 'g1', 'b.png')),
+          ('d3', p.join('scanned_documents', 'g1', 'c')),
+        ],
+      );
 
       final docs = await mapper.documents(await dao.getDocumentsForGroup('g1'));
       final extById = {for (final doc in docs) doc.id: doc.ext};
@@ -84,9 +89,10 @@ void main() {
     });
 
     test('carries the row fields across', () async {
-      await insertGroup('g1', pages: [
-        ('d1', p.join('scanned_documents', 'g1', 'a.jpg')),
-      ]);
+      await insertGroup(
+        'g1',
+        pages: [('d1', p.join('scanned_documents', 'g1', 'a.jpg'))],
+      );
       final [row] = await dao.getDocumentsForGroup('g1');
 
       final [doc] = await mapper.documents([row]);
@@ -101,18 +107,24 @@ void main() {
 
   group('group', () {
     test('maps the row with its pages', () async {
-      await insertGroup('g1', pages: [
-        ('d1', p.join('scanned_documents', 'g1', 'a.jpg')),
-        ('d2', p.join('scanned_documents', 'g1', 'b.jpg')),
-      ]);
+      await insertGroup(
+        'g1',
+        pages: [
+          ('d1', p.join('scanned_documents', 'g1', 'a.jpg')),
+          ('d2', p.join('scanned_documents', 'g1', 'b.jpg')),
+        ],
+      );
       final row = await dao.getGroup('g1');
 
       final group = await mapper.group(row);
 
       expect(group.id, 'g1');
       expect(group.groupName, 'Group g1');
-      expect(group.relativeFolderPath, row.relativeFolderPath);
-      expect(group.documents.map((doc) => doc.id), unorderedEquals(['d1', 'd2']));
+      expect(group.relativePath, row.relativePath);
+      expect(
+        group.documents.map((doc) => doc.id),
+        unorderedEquals(['d1', 'd2']),
+      );
     });
 
     test('a group without pages maps to no documents', () async {
@@ -124,12 +136,14 @@ void main() {
     });
 
     test('only its own pages', () async {
-      await insertGroup('g1', pages: [
-        ('d1', p.join('scanned_documents', 'g1', 'a.jpg')),
-      ]);
-      await insertGroup('g2', pages: [
-        ('d2', p.join('scanned_documents', 'g2', 'b.jpg')),
-      ]);
+      await insertGroup(
+        'g1',
+        pages: [('d1', p.join('scanned_documents', 'g1', 'a.jpg'))],
+      );
+      await insertGroup(
+        'g2',
+        pages: [('d2', p.join('scanned_documents', 'g2', 'b.jpg'))],
+      );
 
       final group = await mapper.group(await dao.getGroup('g1'));
 

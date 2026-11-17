@@ -39,10 +39,7 @@ class MyApp extends StatelessWidget {
       locale: TranslationProvider.of(context).flutterLocale,
       supportedLocales: AppLocaleUtils.supportedLocales,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-      ),
+      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.green),
       routerConfig: GoRouter(
         navigatorKey: rootNavigatorKey,
         debugLogDiagnostics: true,
