@@ -7,10 +7,13 @@ import 'package:my_reviewer/src/controllers/docs/docs_scan_controller.dart';
 import 'package:my_reviewer/src/controllers/docs/group_controller.dart';
 import 'package:my_reviewer/src/controllers/docs/group_edit_controller.dart';
 import 'package:my_reviewer/src/controllers/docs/page_viewer_controller.dart';
+import 'package:my_reviewer/src/controllers/docs/transcription_viewer_controller.dart';
+import 'package:my_reviewer/src/features/scanned_documents/models/scanned_document_group_model.dart';
+import 'package:my_reviewer/src/features/scanned_documents/models/scanned_document_model.dart';
 import 'package:my_reviewer/src/locator.dart';
-import 'package:my_reviewer/src/models/docs/view_models.dart';
 import 'package:my_reviewer/src/screens/docs/docs_group_edit_screen.dart';
 import 'package:my_reviewer/src/screens/docs/docs_group_screen.dart';
+import 'package:my_reviewer/src/screens/docs/docs_page_transcription_screen.dart';
 import 'package:my_reviewer/src/screens/docs/docs_page_viewer_screen.dart';
 import 'package:my_reviewer/src/screens/docs/docs_scan_preview_screen.dart';
 import 'package:my_reviewer/src/screens/docs/docs_screen.dart';
@@ -150,7 +153,8 @@ class DocsGroupEditRouteData extends GoRouteData with $DocsGroupEditRouteData {
   }
 }
 
-class DocsPageViewerRouteData extends GoRouteData with $DocsPageViewerRouteData {
+class DocsPageViewerRouteData extends GoRouteData
+    with $DocsPageViewerRouteData {
   const DocsPageViewerRouteData({
     required this.groupId,
     required this.docId,
@@ -189,15 +193,27 @@ class DocsPageViewerTranscriptionRouteData extends GoRouteData
   const DocsPageViewerTranscriptionRouteData({
     required this.groupId,
     required this.docId,
+    this.$extra,
   });
 
   final String groupId;
   final String docId;
+  final List<ScannedDocumentModel>? $extra;
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    // TODO: implement build
-    return super.build(context, state);
+    return ChangeNotifierProvider<TranscriptionViewerController>(
+      create: (_) {
+        final controller = getIt<TranscriptionViewerController>(
+          param1: (groupId: groupId, docId: docId, initialDocuments: $extra),
+        );
+
+        unawaited(controller.initialize());
+
+        return controller;
+      },
+      child: const DocsPageTranscriptionScreen(),
+    );
   }
 }
 

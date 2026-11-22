@@ -1,0 +1,38 @@
+import 'package:my_reviewer/src/features/scanned_documents/repositories/i_scanned_document_write_repository.dart';
+import 'package:my_reviewer/src/features/scanned_documents/repositories/i_transcription_write_repository.dart';
+import 'package:my_reviewer/src/shared/models/task.dart';
+import 'package:my_reviewer/src/shared/models/use_case.dart';
+import 'package:my_reviewer/src/shared/services/jobs/i_job_dispatcher.dart';
+
+class DeleteScannedGroupUseCase implements UseCase<String, void> {
+  const DeleteScannedGroupUseCase({
+    required this._writeRepo,
+    required this._transcriptionWriteRepo,
+    required this._jobDispatcher,
+  });
+
+  final IScannedDocumentWriteRepository _writeRepo;
+  final ITranscriptionWriteRepository _transcriptionWriteRepo;
+  final IJobDispatcher _jobDispatcher;
+
+  @override
+  Future<void> call(
+    String groupId, {
+    MyReviewerTaskProgressCallback? onProgress,
+  }) async {
+    onProgress?.call(const TaskProgress.preparing());
+
+    final counter = TaskProgressCounter(total: 3, onProgress: onProgress);
+
+    counter.next();
+    await _jobDispatcher.cancelGroup(groupId);
+
+    counter.next();
+    await _transcriptionWriteRepo.deleteGroupFolder(groupId);
+
+    counter.next();
+    await _writeRepo.deleteScannedDocumentGroup(groupId);
+
+    onProgress?.call(const TaskProgress.finishing());
+  }
+}

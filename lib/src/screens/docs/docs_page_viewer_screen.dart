@@ -10,6 +10,7 @@ import 'package:my_reviewer/src/gen/strings.g.dart';
 import 'package:my_reviewer/src/models/docs/view_models.dart';
 import 'package:my_reviewer/src/models/selection_state.dart';
 import 'package:my_reviewer/src/models/ui_sound.dart';
+import 'package:my_reviewer/src/routes.dart';
 import 'package:my_reviewer/src/utils/hero_tags.dart';
 import 'package:my_reviewer/src/widgets/common/misc/thumbnail/flight_sound.dart';
 import 'package:my_reviewer/src/widgets/common/misc/thumbnail/page_aspect_builder.dart';
@@ -153,6 +154,20 @@ class _PageViewerState extends State<_PageViewer> {
         backgroundColor: colorScheme.scrim.withValues(alpha: 0),
         foregroundColor: colorScheme.onPrimary,
         title: Text(docs[currentIndex].name),
+        actions: [
+          IconButton(
+            tooltip: t.docs.transcription.view,
+            icon: const Icon(Icons.text_fields_outlined),
+            onPressed: () {
+              final current = docs[currentIndex];
+
+              DocsPageViewerTranscriptionRouteData(
+                docId: current.id,
+                groupId: current.groupId,
+              ).go(context);
+            },
+          ),
+        ],
       ),
       body: Listener(
         onPointerDown: _onPointerDown,
@@ -260,10 +275,8 @@ class _ZoomablePageState extends State<_ZoomablePage>
     super.initState();
 
     _transform.addListener(_onTransformChanged);
-    _doubleTap = AnimationController(
-      vsync: this,
-      duration: AppDurations.fast,
-    )..addListener(_onDoubleTapTick);
+    _doubleTap = AnimationController(vsync: this, duration: AppDurations.fast)
+      ..addListener(_onDoubleTapTick);
   }
 
   @override
@@ -368,9 +381,10 @@ class _ZoomablePageState extends State<_ZoomablePage>
         ? Matrix4.identity()
         : _zoomedInAt(_doubleTapPosition ?? size.center(Offset.zero));
 
-    _doubleTapZoom = Matrix4Tween(begin: _transform.value, end: end).animate(
-      CurvedAnimation(parent: _doubleTap, curve: Curves.easeOut),
-    );
+    _doubleTapZoom = Matrix4Tween(
+      begin: _transform.value,
+      end: end,
+    ).animate(CurvedAnimation(parent: _doubleTap, curve: Curves.easeOut));
     _doubleTap.forward(from: 0);
   }
 
@@ -380,11 +394,8 @@ class _ZoomablePageState extends State<_ZoomablePage>
   Matrix4 _zoomedInAt(Offset focal) {
     const scale = DocsUiConstants.viewerDoubleTapScale;
 
-    return Matrix4.diagonal3Values(scale, scale, 1)..setTranslationRaw(
-      focal.dx * (1 - scale),
-      focal.dy * (1 - scale),
-      0,
-    );
+    return Matrix4.diagonal3Values(scale, scale, 1)
+      ..setTranslationRaw(focal.dx * (1 - scale), focal.dy * (1 - scale), 0);
   }
 
   @override
@@ -435,53 +446,53 @@ HeroFlightShuttleBuilder _pageShuttle(String path) {
       sounds: _pageSounds,
       direction: direction,
       child: PageAspectBuilder(
-      path: path,
-      builder: (context, pageAspectRatio) => AnimatedBuilder(
-        animation: animation,
-        child: ThumbnailImage(path: path),
-        builder: (context, image) {
-          // The route animation is 0 at the grid and 1 in the viewer in
-          // both directions.
-          final t = animation.value;
-          final frame = 1 - t;
-          final radius = BorderRadius.circular(
-            StackConstants.cardRadius * frame,
-          );
+        path: path,
+        builder: (context, pageAspectRatio) => AnimatedBuilder(
+          animation: animation,
+          child: ThumbnailImage(path: path),
+          builder: (context, image) {
+            // The route animation is 0 at the grid and 1 in the viewer in
+            // both directions.
+            final t = animation.value;
+            final frame = 1 - t;
+            final radius = BorderRadius.circular(
+              StackConstants.cardRadius * frame,
+            );
 
-          return Center(
-            child: AspectRatio(
-              aspectRatio: lerpDouble(
-                StackConstants.defaultCardAspectRatio,
-                pageAspectRatio,
-                t,
-              )!,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: radius,
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.shadow.withValues(
-                        alpha: StackConstants.cardShadowOpacity * frame,
+            return Center(
+              child: AspectRatio(
+                aspectRatio: lerpDouble(
+                  StackConstants.defaultCardAspectRatio,
+                  pageAspectRatio,
+                  t,
+                )!,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: radius,
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.shadow.withValues(
+                          alpha: StackConstants.cardShadowOpacity * frame,
+                        ),
+                        blurRadius: StackConstants.cardShadowBlur,
+                        offset: StackConstants.cardShadowOffset,
                       ),
-                      blurRadius: StackConstants.cardShadowBlur,
-                      offset: StackConstants.cardShadowOffset,
-                    ),
-                  ],
-                ),
-                foregroundDecoration: BoxDecoration(
-                  borderRadius: radius,
-                  border: Border.all(
-                    color: colorScheme.surface.withValues(alpha: frame),
-                    width: StackConstants.cardBorderWidth,
+                    ],
                   ),
+                  foregroundDecoration: BoxDecoration(
+                    borderRadius: radius,
+                    border: Border.all(
+                      color: colorScheme.surface.withValues(alpha: frame),
+                      width: StackConstants.cardBorderWidth,
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: image,
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: image,
               ),
-            ),
-          );
-        },
-      ),
+            );
+          },
+        ),
       ),
     );
   };

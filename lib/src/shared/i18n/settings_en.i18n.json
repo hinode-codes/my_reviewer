@@ -1,0 +1,80 @@
+{
+  "main": {
+    "title": "@:common.navigation.settings",
+    "model": {
+      "title": "Transcription Model",
+      "description": "Choose the model used to transcribe your scanned pages on this device.",
+      "actions": {
+        "download": "Download",
+        "resume": "Resume",
+        "retry": "Try again",
+        "cancel": "Cancel"
+      },
+      "status": {
+        "ready": "Ready to use",
+        "waitingForWifi": "Waiting for Wi-Fi...",
+        "downloading": "Downloading... {progress: int}%",
+        "verifying": "Verifying files integrity..."
+      },
+      "alerts": {
+        "missing": {
+          "title": "Model not downloaded",
+          "message": "Download this model to transcribe your pages. It's a one-time download."
+        },
+        "partial": {
+          "title": "Download incomplete",
+          "message": "A previous download didn't finish. Resume to continue where it left off."
+        }
+      },
+      "errors": {
+        "notEnoughStorage": "Not enough storage space. You need at least {size: String} free to download this model.",
+        "noConnection": "No internet connection. Connect and try again.",
+        "serverUnreachable": "Couldn't reach the download server. Please try again later.",
+        "corrupted": "The downloaded files are damaged. Downloading them again.",
+        "downloadFailed": "The download failed. Check your connection and try again.",
+        "resumeFailed": "Couldn't resume the download. Starting over from the beginning."
+      },
+      "size": {
+        "label": "Download size: {size: String}",
+        "unavailable": "Download size unavailable",
+        "actions": {
+          "moreInfo": "More info"
+        }
+      },
+      "dialogs": {
+        "required": {
+          "title": "Download needed",
+          "message": "This model needs a one-time download before you can transcribe pages. You can leave the app while it downloads. Progress will show in a notification."
+        },
+        "size": {
+          "title": "Download size",
+          "total": "Total size: {size: String}",
+          "fileCount": {
+            "one": "{n} file",
+            "other": "{n} files"
+          }
+        }
+      }
+    },
+    "downloads": {
+      "fields": {
+        "wifiOnly": {
+          "label": "Use Wi-Fi for large downloads",
+          "description": "Large downloads wait for Wi-Fi instead of using mobile data."
+        }
+      }
+    },
+    "notifications": {
+      "download": {
+        "title": "Downloading transcription model",
+        "status": {
+          "downloading": "@:settings.main.model.status.downloading",
+          "waitingForWifi": "@:settings.main.model.status.waitingForWifi",
+          "verifying": "@:settings.main.model.status.verifying",
+          "done": "Model ready to use",
+          "failed": "Download failed"
+        }
+      }
+    }
+  }
+}

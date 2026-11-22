@@ -3,7 +3,7 @@ import 'package:my_reviewer/src/constants/ui_constants.dart';
 import 'package:my_reviewer/src/controllers/docs/scan_preview_controller.dart';
 import 'package:my_reviewer/src/gen/strings.g.dart';
 import 'package:my_reviewer/src/utils/string.dart';
-import 'package:my_reviewer/src/widgets/common/text_field/name_text_field.dart';
+import 'package:my_reviewer/src/shared/ui/text_field/name_text_field.dart';
 import 'package:provider/provider.dart';
 
 import 'docs_scan_thumbnail_card.dart';
@@ -48,7 +48,6 @@ class DocsScanGroupBottomSheet extends StatelessWidget {
     final docs = scanController.docs;
     final imagePaths = scanController.imagePaths;
     final strings = t.docs.scan.preview.bottomSheet;
-
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),

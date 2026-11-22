@@ -1,0 +1,132 @@
+{
+  "main": {
+    "title": "@:common.navigation.docs",
+    "actions": {
+      "scan": "Scan a document"
+    },
+    "status": {
+      "documentCount": {
+        "zero": "No documents",
+        "one": "{n} document",
+        "other": "{n} documents"
+      }
+    },
+    "empty": {
+      "message": "No documents found. Tap the button below to scan a document."
+    },
+    "errors": {
+      "snapshot": "Snapshot error: {error}"
+    }
+  },
+  "detail": {
+    "actions": {
+      "edit": "Edit Group"
+    },
+    "tooltips": {
+      "edit": "Edit this document group"
+    },
+    "empty": {
+      "message": "No documents found in this group."
+    }
+  },
+  "scan": {
+    "title": "Scan Document",
+    "empty": {
+      "message": "No documents captured.",
+      "action": "Scan new documents"
+    },
+    "dialogs": {
+      "discard": {
+        "title": "Exiting Document Scanner",
+        "message": "Unsaved documents are about to be discarded. Are you sure you want to continue? You can save them before exiting.",
+        "actions": {
+          "confirm": "Exit & Discard",
+          "save": "Save & Exit"
+        }
+      }
+    },
+    "preview": {
+      "title": "{current: int} / {total: int}",
+      "actions": {
+        "add": "Scan More",
+        "save": "Save"
+      },
+      "fields": {
+        "docName": {
+          "label": "Document Name",
+          "placeholder": "Enter Document Name",
+          "errors": {
+            "empty": "Document name cannot be empty."
+          }
+        }
+      },
+      "empty": {
+        "title": "Scanned Documents"
+      },
+      "bottomBar": {
+        "actions": {
+          "showGroup": "Show Group ({count: int})"
+        },
+        "tooltips": {
+          "add": "Scan more documents.",
+          "delete": "Delete current document.",
+          "group": "Show all documents."
+        }
+      },
+      "bottomSheet": {
+        "title": "Group Details",
+        "fields": {
+          "groupName": {
+            "label": "Group Name",
+            "placeholder": "Enter Group Name",
+            "errors": {
+              "empty": "Group name cannot be empty."
+            }
+          }
+        }
+      }
+    },
+    "save": {
+      "actions": {
+        "back": "Proceed to Exit",
+        "close": "Okay",
+        "retry": "Try to Save Again"
+      },
+      "status": {
+        "preparing": {
+          "one": "Preparing to save document...",
+          "other": "Preparing to save documents..."
+        },
+        "saving(param=total)": {
+          "one": "Saving document... {current: int} / {total: int}",
+          "other": "Saving documents... {current: int} / {total: int}"
+        },
+        "done": {
+          "one": "Document saved successfully.",
+          "other": "Documents saved successfully."
+        },
+        "failed": {
+          "one": "Failed to save document.",
+          "other": "Failed to save documents."
+        }
+      }
+    }
+  },
+  "transcription": {
+    "actions": {
+      "view": "View transcription",
+      "viewImage": "View scanned image",
+      "retranscribe": "Re-transcribe page",
+      "start": "Transcribe Page"
+    },
+    "status": {
+      "queued": "Waiting in transcription queue...",
+      "streaming": "Transcribing page..."
+    },
+    "empty": {
+      "title": "No Transcription Yet",
+      "message": "Transcribe this scanned page offline into editable Markdown."
+    },
+    "stats": "{words: int} words · ~{seconds: int}s read"
+  }
+}

@@ -3,7 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_reviewer/src/constants/stack_constants.dart';
-import 'package:my_reviewer/src/utils/stack_layout.dart';
+import 'package:my_reviewer/src/shared/utils/stack_layout.dart';
 
 const _epsilon = 1e-9;
 const _portrait = 0.5;
@@ -88,14 +88,16 @@ void main() {
 
         expect(
           size.width,
-          lessThanOrEqualTo(space.width - StackConstants.overflowMargin +
-              _epsilon),
+          lessThanOrEqualTo(
+            space.width - StackConstants.overflowMargin + _epsilon,
+          ),
           reason: 'width in $space',
         );
         expect(
           size.height,
-          lessThanOrEqualTo(space.height - StackConstants.overflowMargin +
-              _epsilon),
+          lessThanOrEqualTo(
+            space.height - StackConstants.overflowMargin + _epsilon,
+          ),
           reason: 'height in $space',
         );
         expect(
@@ -145,19 +147,21 @@ void main() {
       _expectRest(poses.last);
     });
 
-    test('three pages: back and middle fan out to either side, front is flat',
-        () {
-      final poses = layoutFor(3).poses;
-      final [back, middle, front] = poses;
+    test(
+      'three pages: back and middle fan out to either side, front is flat',
+      () {
+        final poses = layoutFor(3).poses;
+        final [back, middle, front] = poses;
 
-      expect(back.angle, StackConstants.backCardAngle);
-      expect(middle.angle, StackConstants.middleCardAngle);
-      expect(back.offset.dx, lessThan(0));
-      expect(middle.offset.dx, greaterThan(0));
-      expect(back.offset.dx, -middle.offset.dx);
-      expect(back.offset.dy, middle.offset.dy);
-      _expectRest(front);
-    });
+        expect(back.angle, StackConstants.backCardAngle);
+        expect(middle.angle, StackConstants.middleCardAngle);
+        expect(back.offset.dx, lessThan(0));
+        expect(middle.offset.dx, greaterThan(0));
+        expect(back.offset.dx, -middle.offset.dx);
+        expect(back.offset.dy, middle.offset.dy);
+        _expectRest(front);
+      },
+    );
 
     test('the front card is flat for every count', () {
       for (var count = 1; count <= StackConstants.maxVisibleCards; count++) {
@@ -170,31 +174,34 @@ void main() {
 
       expect(
         poses,
-        hasLength(math.min(
-          StackConstants.maxVisibleCards + 5,
-          StackConstants.maxVisibleCards,
-        )),
+        hasLength(
+          math.min(
+            StackConstants.maxVisibleCards + 5,
+            StackConstants.maxVisibleCards,
+          ),
+        ),
       );
     });
 
     test('the spread stops growing on large cards', () {
-      final back = layoutFor(3, available: const Size(100000, 100000))
-          .poses
-          .first;
+      final back = layoutFor(
+        3,
+        available: const Size(100000, 100000),
+      ).poses.first;
 
-      expect(back.offset, Offset(
-        -StackConstants.maxSpreadX,
-        StackConstants.maxSpreadY,
-      ));
+      expect(
+        back.offset,
+        Offset(-StackConstants.maxSpreadX, StackConstants.maxSpreadY),
+      );
     });
 
     test('the spread keeps a minimum on tiny cards', () {
       final back = layoutFor(3, available: Size.zero).poses.first;
 
-      expect(back.offset, Offset(
-        -StackConstants.minSpreadX,
-        StackConstants.minSpreadY,
-      ));
+      expect(
+        back.offset,
+        Offset(-StackConstants.minSpreadX, StackConstants.minSpreadY),
+      );
     });
   });
 }

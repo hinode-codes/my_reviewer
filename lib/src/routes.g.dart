@@ -221,6 +221,7 @@ mixin $DocsPageViewerTranscriptionRouteData on GoRouteData {
       DocsPageViewerTranscriptionRouteData(
         groupId: state.pathParameters['groupId']!,
         docId: state.pathParameters['docId']!,
+        $extra: state.extra as List<ScannedDocumentModel>?,
       );
 
   DocsPageViewerTranscriptionRouteData get _self =>
@@ -232,17 +233,19 @@ mixin $DocsPageViewerTranscriptionRouteData on GoRouteData {
   );
 
   @override
-  void go(BuildContext context) => context.go(location);
+  void go(BuildContext context) => context.go(location, extra: _self.$extra);
 
   @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+  Future<T?> push<T>(BuildContext context) =>
+      context.push<T>(location, extra: _self.$extra);
 
   @override
   void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+      context.pushReplacement(location, extra: _self.$extra);
 
   @override
-  void replace(BuildContext context) => context.replace(location);
+  void replace(BuildContext context) =>
+      context.replace(location, extra: _self.$extra);
 }
 
 mixin $LearnRouteData on GoRouteData {

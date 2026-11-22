@@ -1,0 +1,53 @@
+{
+  "title": "My Reviewer",
+  "navigation": {
+    "docs": "Documents",
+    "learn": "Learn",
+    "settings": "Settings"
+  },
+  "actions": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "retry": "Try again",
+    "close": "Close",
+    "proceed": "Proceed",
+    "done": "Done",
+    "hide": "Hide",
+    "keep": "Keep",
+    "delete": "Delete"
+  },
+  "status": {
+    "success": "Successful operation",
+    "failed": "Something went wrong",
+    "preparing": "Preparing... please wait",
+    "finishing": "Finishing up...",
+    "processing": "Processing... {count: int} / {total: int}",
+    "loading": "Loading..."
+  },
+  "selection": {
+    "tooltips": {
+      "close": "Cancel selection",
+      "deleteInactive": "Select items to delete.",
+      "deleteActive": "Delete selected items.",
+      "selectAll": "Select all items.",
+      "deselectAll": "Deselect all items."
+    },
+    "semantics": {
+      "select": "Select this tile",
+      "deselect": "Deselect this tile",
+      "startSelecting": "You have entered selection mode. This tile has been selected. Please select or deselect other tiles."
+    },
+    "status": {
+      "selected": "{count: int} / {total: int} selected"
+    },
+    "dialogs": {
+      "delete": {
+        "title": {
+          "one": "Deleting {n} document",
+          "other": "Deleting {n} documents"
+        },
+        "message": "Are you sure you want to continue?"
+      }
+    }
+  }
+}
