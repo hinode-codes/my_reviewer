@@ -239,3 +239,26 @@ int estimateReadTimeMs(int wordCount, {int wordsPerMinute = 200}) {
 
   return ((wordCount / wordsPerMinute) * 60 * 1000).round();
 }
+
+/// Strips an unclosed leading ```markdown fence during live streaming so
+/// Markdown renderers display formatted text immediately instead of one giant
+/// code block until the closing fence arrives.
+String cleanStreamingOcrMarkdown(String rawBuffer) {
+  var cleaned = rawBuffer.replaceFirst(_leadingWhitespaceRegex, '');
+  if (cleaned.isEmpty) {
+    return '';
+  }
+
+  final leakMatch = _chatTemplateLeakRegex.firstMatch(cleaned);
+  if (leakMatch != null) {
+    cleaned = cleaned.substring(0, leakMatch.start);
+  }
+
+  // Strip leading ```markdown / ```md / ``` fence even before closing fence arrives.
+  cleaned = cleaned.replaceFirst(_leadingOpenFenceRegex, '');
+
+  // If a closing fence has already arrived at the end, strip it too.
+  cleaned = cleaned.replaceFirst(_trailingCloseFenceRegex, '');
+
+  return clampMarkdownWhitespace(cleaned);
+}

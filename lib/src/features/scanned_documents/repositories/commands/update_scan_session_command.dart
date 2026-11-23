@@ -51,7 +51,7 @@ class UpdateScanSessionCommand {
     final GroupFolder folder = (
       name: folderName,
       relative: relativePath,
-      absolute: await storage.resolveAbsolutePath(relativePath),
+      absolute: storage.resolveAbsolutePath(relativePath),
     );
 
     final names = UniqueNameAllocator(const []);
@@ -173,7 +173,7 @@ class UpdateScanSessionCommand {
       // while temp scan captures live outside storage root (absolute paths).
       storage.deleteQuietlyBatch([
         for (final file in removedFiles)
-          await storage.resolveAbsolutePath(file.staging),
+          storage.resolveAbsolutePath(file.staging),
         ...newPages.map((p) => p.sourceAbsolutePath),
       ]);
 

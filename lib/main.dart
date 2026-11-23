@@ -1,69 +1,38 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:my_reviewer/src/controllers/background_progress_banner_controller.dart';
-import 'package:my_reviewer/src/controllers/settings_controller.dart';
 import 'package:my_reviewer/src/locator.dart';
-import 'package:my_reviewer/src/models/qwen_ocr_model_spec.dart';
-import 'package:my_reviewer/src/repositories/jobs/impl.dart';
-import 'package:my_reviewer/src/repositories/jobs/interface.dart';
 import 'package:my_reviewer/src/routes.dart';
-import 'package:my_reviewer/src/services/ui_sound_service.dart';
+import 'package:my_reviewer/src/shared/controllers/ai_model_selector_controller.dart';
 import 'package:my_reviewer/src/shared/i18n/gen/strings.g.dart';
-import 'package:provider/provider.dart';
+import 'package:my_reviewer/src/shared/services/jobs/local_job_queue_runner.dart';
+import 'package:my_reviewer/src/shared/services/notifications/i_job_notification_service.dart';
+import 'package:my_reviewer/src/shared/services/sound/i_sound_service.dart';
 
-const String _buildHfToken = String.fromEnvironment('HF_TOKEN');
-
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   LocaleSettings.useDeviceLocale();
+  
+  const hfToken = String.fromEnvironment('HF_TOKEN');
 
-  if (Platform.isAndroid) {
-    AndroidForegroundKeepAlive.initialize();
-  }
+  await setupLocator(
+    readHuggingFaceToken: hfToken.isEmpty ? null : () async => hfToken,
+  );
 
-  setupLocator();
+  getIt<IJobNotificationService>().initialize();
 
   // Not awaited: the first screen should not wait for audio. Sounds are
   // silent until loading finishes, well before anyone opens a stack.
-  unawaited(getIt<IUiSoundService>().init());
+  unawaited(getIt<ISoundService>().initialize());
   unawaited(_initializeBackgroundServices());
 
-  runApp(
-    TranslationProvider(
-      child: MultiProvider(
-        providers: [
-          ChangeNotifierProvider<SettingsController>.value(
-            value: getIt<SettingsController>(),
-          ),
-          ChangeNotifierProvider<BackgroundProgressBannerController>.value(
-            value: getIt<BackgroundProgressBannerController>(),
-          ),
-        ],
-        child: const MyApp(),
-      ),
-    ),
-  );
+  runApp(TranslationProvider(child: const MyApp()));
 }
 
 Future<void> _initializeBackgroundServices() async {
-  final downloader = getIt<IModelDownloader>();
-  final jobQueue = getIt<IJobQueue>();
-  final bannerController = getIt<BackgroundProgressBannerController>();
-
-  await downloader.initialize();
-  await jobQueue.initialize();
-
-  bannerController.observe(downloader.watch(qwenOcrModelSpec.id));
-
-  final userToken = "" as String?; //settings.huggingFaceToken?.trim();
-  final token = (userToken != null && userToken.isNotEmpty)
-      ? userToken
-      : (_buildHfToken.isNotEmpty ? _buildHfToken : null);
-
-  await downloader.ensureDownloaded(qwenOcrModelSpec, authToken: token);
+  await getIt<AiModelSelectorController>().initialize();
+  await getIt<LocalJobQueueRunner>().start();
 }
 
 class MyApp extends StatefulWidget {

@@ -3,23 +3,27 @@ import 'package:material_ui/material_ui.dart';
 import 'package:my_reviewer/src/features/scanned_documents/constants/ui_constants.dart';
 import 'package:my_reviewer/src/features/scanned_documents/models/scanned_document_model.dart';
 import 'package:my_reviewer/src/features/scanned_documents/utils/hero_tags.dart';
+import 'package:my_reviewer/src/locator.dart';
 import 'package:my_reviewer/src/routes.dart';
 import 'package:my_reviewer/src/shared/constants/image_constants.dart';
 import 'package:my_reviewer/src/shared/constants/ui_constants.dart';
 import 'package:my_reviewer/src/shared/controllers/selection/selectable_items.dart';
 import 'package:my_reviewer/src/shared/models/selection.dart';
+import 'package:my_reviewer/src/shared/services/storage/i_file_storage_service.dart';
 import 'package:my_reviewer/src/shared/ui/selection/selection_tile.dart';
 import 'package:my_reviewer/src/shared/ui/stacked_thumbnail_cards/thumbnail_card.dart';
 
 class DocsDocumentGridTile extends StatelessWidget {
-  const DocsDocumentGridTile({
+  DocsDocumentGridTile({
     super.key,
     required this._selection,
     required this._doc,
-  });
+    IFileStorageService? storageService,
+  }) : _storageService = storageService ?? getIt<IFileStorageService>();
 
   final SelectableItems<ScannedDocumentModel> _selection;
   final ScannedDocumentModel _doc;
+  final IFileStorageService _storageService;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +45,11 @@ class DocsDocumentGridTile extends StatelessWidget {
                 child: Hero(
                   tag: pageHeroTag(_doc.groupId, _doc.relativePath),
                   transitionOnUserGestures: true,
-                  child: ThumbnailCard(path: _doc.relativePath),
+                  child: ThumbnailCard(
+                    path: _storageService.resolveAbsolutePath(
+                      _doc.relativePath,
+                    ),
+                  ),
                 ),
               ),
             ),

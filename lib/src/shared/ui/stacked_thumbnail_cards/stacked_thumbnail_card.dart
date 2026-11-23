@@ -20,16 +20,21 @@ class StackedThumbnailCard extends StatelessWidget {
   const StackedThumbnailCard({
     super.key,
     required this.imagePaths,
+    required this.heroTags,
     this.width,
     this.height,
-    this.heroPrefix,
     this.cardAspectRatio = ImageConstants.defaultCardAspectRatio,
-  });
+  }) : assert(
+         imagePaths.length == heroTags.length,
+         'Every image needs exactly one hero tag.',
+       );
 
   final List<String> imagePaths;
+
+  /// One hero tag per entry in [imagePaths], same order.
+  final List<String> heroTags;
   final double? width;
   final double? height;
-  final String? heroPrefix;
 
   /// Document aspect ratio (width / height).
   final double cardAspectRatio;
@@ -62,7 +67,7 @@ class StackedThumbnailCard extends StatelessWidget {
             children: [
               for (final (index, path) in displayPaths.indexed)
                 _StackCardHero(
-                  tag: _heroTagFor(path),
+                  tag: heroTags[index],
                   pose: layout.poses[index],
                   // Every card flies at once; only the front one sounds.
                   sounds: index == frontIndex ? _stackSounds : null,
@@ -78,11 +83,6 @@ class StackedThumbnailCard extends StatelessWidget {
       },
     );
   }
-
-  String _heroTagFor(String path) => switch (heroPrefix) {
-    null => path,
-    final prefix => '${prefix}_$path',
-  };
 }
 
 /// One card of the stack, posed, as a hero.

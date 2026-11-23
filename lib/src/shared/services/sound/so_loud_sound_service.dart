@@ -38,6 +38,9 @@ class SoLoudSoundService implements ISoundService {
       await session.configure(_politeSession);
       _soloud.setAudioDeviceIdleTimeout(_deviceIdleTimeout);
 
+      await _soloud.init();
+      _soloud.setAudioDeviceIdleTimeout(_deviceIdleTimeout);
+
       // Loaded together, and fully into memory (the default mode), so
       // playing one later does no decoding or disk work.
       final sources = await [

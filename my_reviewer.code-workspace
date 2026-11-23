@@ -1,0 +1,75 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "dart.flutterSdkPath": null,
+        "dart.lineLength": 80,
+        "dart.previewFlutterUiGuides": true,
+        "dart.previewFlutterUiGuidesCustomTracking": true,
+        "dart.openDevTools": "flutter",
+        "dart.hotReloadOnSave": "manual",
+        "dart.renameFilesWithClasses": "prompt",
+        "dart.updateImportsOnRename": true,
+        "dart.analysisExcludedFolders": [
+            "**/*.g.dart",
+            "**/*.freezed.dart"
+        ],
+        "files.exclude": {
+            "**/.dart_tool": true,
+            "**/build": true,
+            "**/linux": true,
+            "**/macos": true,
+            "**/windows": true,
+            "**/web": true,
+            "**/ios": true,
+            "**/ai": true,
+            "**/.idea": true,
+            "**/.vscode": true,
+        },
+        "search.exclude": {
+            "**/.dart_tool": true,
+            "**/build": true,
+            "**/*.g.dart": true,
+            "**/*.freezed.dart": true
+        },
+        "files.watcherExclude": {
+            "**/.dart_tool/**": true,
+            "**/build/**": true
+        },
+        "todo-tree.ripgrep.ripgrep": "C:\\ProgramData\\chocolatey\\bin\\rg.exe"
+    },
+    "extensions": {
+        "recommendations": [
+            "Dart-Code.dart-code",
+            "Dart-Code.flutter",
+            "Gruntfuggly.todo-tree",
+            "usernamehw.errorlens"
+        ]
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Flutter (Debug)",
+                "request": "launch",
+                "type": "dart",
+                "flutterMode": "debug"
+            },
+            {
+                "name": "Flutter (Profile)",
+                "request": "launch",
+                "type": "dart",
+                "flutterMode": "profile"
+            },
+            {
+                "name": "Flutter (Release)",
+                "request": "launch",
+                "type": "dart",
+                "flutterMode": "release"
+            }
+        ]
+    }
+}

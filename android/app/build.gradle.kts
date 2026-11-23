@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.github.hinode_codes.my_reviewer"
-    compileSdk = flutter.compileSdk
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "com.github.hinode_codes.my_reviewer"
-        minSdk = flutter.minSdk
+        minSdk = 28
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

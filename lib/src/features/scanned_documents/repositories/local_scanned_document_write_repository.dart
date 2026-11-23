@@ -35,9 +35,7 @@ class LocalScannedDocumentWriteRepository
 
       await docsDao.deleteDocument(documentId);
 
-      final absolutePath = await storageService.resolveAbsolutePath(
-        doc.relativePath,
-      );
+      final absolutePath = storageService.resolveAbsolutePath(doc.relativePath);
 
       await storageService.delete(absolutePath);
     });
@@ -50,7 +48,7 @@ class LocalScannedDocumentWriteRepository
 
       await groupsDao.deleteGroup(groupId);
 
-      final absolutePath = await storageService.resolveAbsolutePath(
+      final absolutePath = storageService.resolveAbsolutePath(
         group.relativePath,
       );
 

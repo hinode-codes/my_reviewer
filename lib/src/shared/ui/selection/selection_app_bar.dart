@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:my_reviewer/src/controllers/selection/selectable_items.dart';
-import 'package:my_reviewer/src/models/selection_state.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:my_reviewer/src/shared/controllers/selection/selectable_items.dart';
 import 'package:my_reviewer/src/shared/controllers/task_controller.dart';
 import 'package:my_reviewer/src/shared/i18n/gen/strings.g.dart';
 import 'package:my_reviewer/src/shared/models/confirmation.dart';
+import 'package:my_reviewer/src/shared/models/selection.dart';
 import 'package:my_reviewer/src/shared/models/task.dart';
 import 'package:my_reviewer/src/shared/ui/dialogs/confirmation_dialog.dart';
 import 'package:my_reviewer/src/shared/ui/dialogs/task_dialog.dart';

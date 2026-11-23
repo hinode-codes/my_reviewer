@@ -7,15 +7,35 @@ import 'package:my_reviewer/src/shared/i18n/gen/strings.g.dart';
 import 'package:my_reviewer/src/shared/models/task.dart';
 import 'package:provider/provider.dart';
 
+typedef TaskProcessingMessageBuilder = String Function(int current, int total);
+
+class TaskDialogMessages {
+  const TaskDialogMessages({
+    this.preparing,
+    this.processing,
+    this.finishing,
+    this.succeeded,
+    this.failed,
+  });
+
+  final String? preparing;
+  final TaskProcessingMessageBuilder? processing;
+  final String? finishing;
+  final String? succeeded;
+  final String? failed;
+}
+
 class TaskDialog extends StatelessWidget {
-  const TaskDialog({super.key, required this.kind});
+  const TaskDialog({super.key, required this.kind, this.messages});
 
   final TaskKind kind;
+  final TaskDialogMessages? messages;
 
   static Future<TaskStatus> run(
     BuildContext context, {
     required TaskController<Object?> task,
     required TaskKind kind,
+    TaskDialogMessages? messages,
   }) async {
     unawaited(task.run());
 
@@ -24,7 +44,7 @@ class TaskDialog extends StatelessWidget {
       barrierDismissible: false,
       builder: (_) => ChangeNotifierProvider<TaskController<Object?>>.value(
         value: task,
-        child: TaskDialog(kind: kind),
+        child: TaskDialog(kind: kind, messages: messages),
       ),
     );
 
@@ -51,25 +71,27 @@ class TaskDialog extends StatelessWidget {
           TaskStatus.succeeded => _ResultContent(
             icon: Icons.check_outlined,
             iconColor: colorScheme.primary,
-            message: t.common.status.success,
+            message: messages?.succeeded ?? t.common.status.success,
           ),
           TaskStatus.failed => _ResultContent(
             icon: Icons.error_outline_outlined,
             iconColor: colorScheme.error,
-            message: t.common.status.failed,
+            message: messages?.failed ?? t.common.status.failed,
           ),
           TaskStatus.idle || TaskStatus.running => _ProgressContent(
             value: progress?.fraction,
-            message: progress != null
-                ? switch (progress.stage) {
-                    TaskStage.preparing => t.common.status.preparing,
-                    TaskStage.processing => t.common.status.processing(
-                      count: progress.current,
+            message: switch (progress?.stage) {
+              null || TaskStage.preparing =>
+                messages?.preparing ?? t.common.status.preparing,
+              TaskStage.processing =>
+                messages?.processing?.call(progress!.current, progress.total) ??
+                    t.common.status.processing(
+                      count: progress!.current,
                       total: progress.total,
                     ),
-                    TaskStage.finishing => t.common.status.finishing,
-                  }
-                : t.common.status.preparing,
+              TaskStage.finishing =>
+                messages?.finishing ?? t.common.status.finishing,
+            },
           ),
         },
         actions: switch (status) {

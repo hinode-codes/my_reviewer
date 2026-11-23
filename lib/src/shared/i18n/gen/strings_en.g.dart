@@ -43,6 +43,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	// Translations
 	late final Translations$common$en common = Translations$common$en._(_root);
 	late final Translations$docs$en docs = Translations$docs$en._(_root);
+	late final Translations$jobs$en jobs = Translations$jobs$en._(_root);
 	late final Translations$learn$en learn = Translations$learn$en._(_root);
 	late final Translations$settings$en settings = Translations$settings$en._(_root);
 }
@@ -75,6 +76,16 @@ class Translations$docs$en {
 	late final Translations$docs$detail$en detail = Translations$docs$detail$en._(_root);
 	late final Translations$docs$scan$en scan = Translations$docs$scan$en._(_root);
 	late final Translations$docs$transcription$en transcription = Translations$docs$transcription$en._(_root);
+}
+
+// Path: jobs
+class Translations$jobs$en {
+	Translations$jobs$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	late final Translations$jobs$transcription$en transcription = Translations$jobs$transcription$en._(_root);
 }
 
 // Path: learn
@@ -149,6 +160,12 @@ class Translations$common$actions$en {
 
 	/// en: 'Delete'
 	String get delete => 'Delete';
+
+	/// en: 'Copied to clipboard'
+	String get copied => 'Copied to clipboard';
+
+	/// en: 'Copy'
+	String get copy => 'Copy';
 }
 
 // Path: common.status
@@ -247,9 +264,22 @@ class Translations$docs$transcription$en {
 	late final Translations$docs$transcription$actions$en actions = Translations$docs$transcription$actions$en._(_root);
 	late final Translations$docs$transcription$status$en status = Translations$docs$transcription$status$en._(_root);
 	late final Translations$docs$transcription$empty$en empty = Translations$docs$transcription$empty$en._(_root);
+	late final Translations$docs$transcription$errors$en errors = Translations$docs$transcription$errors$en._(_root);
+	late final Translations$docs$transcription$stats$en stats = Translations$docs$transcription$stats$en._(_root);
+}
 
-	/// en: '{words: int} words · ~{seconds: int}s read'
-	String stats({required int words, required int seconds}) => '${words} words · ~${seconds}s read';
+// Path: jobs.transcription
+class Translations$jobs$transcription$en {
+	Translations$jobs$transcription$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Transcribing documents'
+	String get title => 'Transcribing documents';
+
+	late final Translations$jobs$transcription$status$en status = Translations$jobs$transcription$status$en._(_root);
 }
 
 // Path: learn.main
@@ -469,9 +499,9 @@ class Translations$docs$scan$preview$en {
 	String title({required int current, required int total}) => '${current} / ${total}';
 
 	late final Translations$docs$scan$preview$actions$en actions = Translations$docs$scan$preview$actions$en._(_root);
+	late final Translations$docs$scan$preview$tooltips$en tooltips = Translations$docs$scan$preview$tooltips$en._(_root);
 	late final Translations$docs$scan$preview$fields$en fields = Translations$docs$scan$preview$fields$en._(_root);
 	late final Translations$docs$scan$preview$empty$en empty = Translations$docs$scan$preview$empty$en._(_root);
-	late final Translations$docs$scan$preview$bottomBar$en bottomBar = Translations$docs$scan$preview$bottomBar$en._(_root);
 	late final Translations$docs$scan$preview$bottomSheet$en bottomSheet = Translations$docs$scan$preview$bottomSheet$en._(_root);
 }
 
@@ -503,8 +533,14 @@ class Translations$docs$transcription$actions$en {
 	/// en: 'Re-transcribe page'
 	String get retranscribe => 'Re-transcribe page';
 
-	/// en: 'Transcribe Page'
-	String get start => 'Transcribe Page';
+	/// en: 'Add to Queue'
+	String get start => 'Add to Queue';
+
+	/// en: 'Go to Queue'
+	String get goToQueue => 'Go to Queue';
+
+	/// en: 'Retry Transcription'
+	String get retry => 'Retry Transcription';
 }
 
 // Path: docs.transcription.status
@@ -518,8 +554,20 @@ class Translations$docs$transcription$status$en {
 	/// en: 'Waiting in transcription queue...'
 	String get queued => 'Waiting in transcription queue...';
 
+	/// en: 'Waiting in queue (#{position: int})'
+	String queuedAtPosition({required int position}) => 'Waiting in queue (#${position})';
+
+	/// en: 'This page will be transcribed automatically when it reaches the front of the queue.'
+	String get queuedDescription => 'This page will be transcribed automatically when it reaches the front of the queue.';
+
 	/// en: 'Transcribing page...'
 	String get streaming => 'Transcribing page...';
+
+	/// en: 'Preparing on-device OCR model...'
+	String get warmingUp => 'Preparing on-device OCR model...';
+
+	/// en: 'Partial transcription so far'
+	String get partialPreview => 'Partial transcription so far';
 }
 
 // Path: docs.transcription.empty
@@ -535,6 +583,60 @@ class Translations$docs$transcription$empty$en {
 
 	/// en: 'Transcribe this scanned page offline into editable Markdown.'
 	String get message => 'Transcribe this scanned page offline into editable Markdown.';
+}
+
+// Path: docs.transcription.errors
+class Translations$docs$transcription$errors$en {
+	Translations$docs$transcription$errors$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Transcription Failed'
+	String get failedTitle => 'Transcription Failed';
+}
+
+// Path: docs.transcription.stats
+class Translations$docs$transcription$stats$en {
+	Translations$docs$transcription$stats$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: '(one) {{n} word} (other) {{n} words}'
+	String wordCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} word',
+		other: '${n} words',
+	);
+
+	/// en: '~{seconds: int}s read'
+	String readTime({required int seconds}) => '~${seconds}s read';
+
+	/// en: 'Transcribed in {seconds: int}s'
+	String transcribeTime({required int seconds}) => 'Transcribed in ${seconds}s';
+}
+
+// Path: jobs.transcription.status
+class Translations$jobs$transcription$status$en {
+	Translations$jobs$transcription$status$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Processing page transcription'
+	String get processing => 'Processing page transcription';
+
+	/// en: 'Resuming page transcription'
+	String get resuming => 'Resuming page transcription';
+
+	/// en: '(one) {Waiting to retry ({n} remaining)} (other) {Waiting to retry ({n} remaining)}'
+	String waitingToRetry({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: 'Waiting to retry (${n} remaining)',
+		other: 'Waiting to retry (${n} remaining)',
+	);
 }
 
 // Path: settings.main.model
@@ -627,6 +729,27 @@ class Translations$docs$scan$preview$actions$en {
 
 	/// en: 'Save'
 	String get save => 'Save';
+
+	/// en: 'Show Group ({count: int})'
+	String showGroup({required int count}) => 'Show Group (${count})';
+}
+
+// Path: docs.scan.preview.tooltips
+class Translations$docs$scan$preview$tooltips$en {
+	Translations$docs$scan$preview$tooltips$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Scan more documents.'
+	String get add => 'Scan more documents.';
+
+	/// en: 'Delete current document.'
+	String get delete => 'Delete current document.';
+
+	/// en: 'Show all documents.'
+	String get group => 'Show all documents.';
 }
 
 // Path: docs.scan.preview.fields
@@ -649,17 +772,6 @@ class Translations$docs$scan$preview$empty$en {
 
 	/// en: 'Scanned Documents'
 	String get title => 'Scanned Documents';
-}
-
-// Path: docs.scan.preview.bottomBar
-class Translations$docs$scan$preview$bottomBar$en {
-	Translations$docs$scan$preview$bottomBar$en._(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-	late final Translations$docs$scan$preview$bottomBar$actions$en actions = Translations$docs$scan$preview$bottomBar$actions$en._(_root);
-	late final Translations$docs$scan$preview$bottomBar$tooltips$en tooltips = Translations$docs$scan$preview$bottomBar$tooltips$en._(_root);
 }
 
 // Path: docs.scan.preview.bottomSheet
@@ -746,6 +858,12 @@ class Translations$settings$main$model$actions$en {
 
 	/// en: 'Cancel'
 	String get cancel => 'Cancel';
+
+	/// en: 'Complete setup'
+	String get completeSetup => 'Complete setup';
+
+	/// en: 'Discard'
+	String get discard => 'Discard';
 }
 
 // Path: settings.main.model.status
@@ -767,6 +885,21 @@ class Translations$settings$main$model$status$en {
 
 	/// en: 'Verifying files integrity...'
 	String get verifying => 'Verifying files integrity...';
+
+	/// en: 'Preparing model files...'
+	String get preparing => 'Preparing model files...';
+
+	/// en: 'Integrating model with on-device engine...'
+	String get integrating => 'Integrating model with on-device engine...';
+
+	/// en: 'Finalizing setup...'
+	String get finishing => 'Finalizing setup...';
+
+	/// en: 'Model ready to use'
+	String get done => 'Model ready to use';
+
+	/// en: 'Model setup failed'
+	String get failed => 'Model setup failed';
 }
 
 // Path: settings.main.model.alerts
@@ -778,6 +911,9 @@ class Translations$settings$main$model$alerts$en {
 	// Translations
 	late final Translations$settings$main$model$alerts$missing$en missing = Translations$settings$main$model$alerts$missing$en._(_root);
 	late final Translations$settings$main$model$alerts$partial$en partial = Translations$settings$main$model$alerts$partial$en._(_root);
+	late final Translations$settings$main$model$alerts$unverified$en unverified = Translations$settings$main$model$alerts$unverified$en._(_root);
+	late final Translations$settings$main$model$alerts$unintegrated$en unintegrated = Translations$settings$main$model$alerts$unintegrated$en._(_root);
+	late final Translations$settings$main$model$alerts$failed$en failed = Translations$settings$main$model$alerts$failed$en._(_root);
 }
 
 // Path: settings.main.model.errors
@@ -831,6 +967,7 @@ class Translations$settings$main$model$dialogs$en {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+	late final Translations$settings$main$model$dialogs$discard$en discard = Translations$settings$main$model$dialogs$discard$en._(_root);
 	late final Translations$settings$main$model$dialogs$required$en required = Translations$settings$main$model$dialogs$required$en._(_root);
 	late final Translations$settings$main$model$dialogs$size$en size = Translations$settings$main$model$dialogs$size$en._(_root);
 }
@@ -891,36 +1028,6 @@ class Translations$docs$scan$preview$fields$docName$en {
 	late final Translations$docs$scan$preview$fields$docName$errors$en errors = Translations$docs$scan$preview$fields$docName$errors$en._(_root);
 }
 
-// Path: docs.scan.preview.bottomBar.actions
-class Translations$docs$scan$preview$bottomBar$actions$en {
-	Translations$docs$scan$preview$bottomBar$actions$en._(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Show Group ({count: int})'
-	String showGroup({required int count}) => 'Show Group (${count})';
-}
-
-// Path: docs.scan.preview.bottomBar.tooltips
-class Translations$docs$scan$preview$bottomBar$tooltips$en {
-	Translations$docs$scan$preview$bottomBar$tooltips$en._(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Scan more documents.'
-	String get add => 'Scan more documents.';
-
-	/// en: 'Delete current document.'
-	String get delete => 'Delete current document.';
-
-	/// en: 'Show all documents.'
-	String get group => 'Show all documents.';
-}
-
 // Path: docs.scan.preview.bottomSheet.fields
 class Translations$docs$scan$preview$bottomSheet$fields$en {
 	Translations$docs$scan$preview$bottomSheet$fields$en._(this._root);
@@ -961,6 +1068,51 @@ class Translations$settings$main$model$alerts$partial$en {
 	String get message => 'A previous download didn\'t finish. Resume to continue where it left off.';
 }
 
+// Path: settings.main.model.alerts.unverified
+class Translations$settings$main$model$alerts$unverified$en {
+	Translations$settings$main$model$alerts$unverified$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Verification incomplete'
+	String get title => 'Verification incomplete';
+
+	/// en: 'All files are downloaded, but integrity verification didn't finish.'
+	String get message => 'All files are downloaded, but integrity verification didn\'t finish.';
+}
+
+// Path: settings.main.model.alerts.unintegrated
+class Translations$settings$main$model$alerts$unintegrated$en {
+	Translations$settings$main$model$alerts$unintegrated$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Setup incomplete'
+	String get title => 'Setup incomplete';
+
+	/// en: 'Model files are verified, but runtime integration didn't finish.'
+	String get message => 'Model files are verified, but runtime integration didn\'t finish.';
+}
+
+// Path: settings.main.model.alerts.failed
+class Translations$settings$main$model$alerts$failed$en {
+	Translations$settings$main$model$alerts$failed$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Model setup failed'
+	String get title => 'Model setup failed';
+
+	/// en: 'Something went wrong while preparing this model. Try again.'
+	String get message => 'Something went wrong while preparing this model. Try again.';
+}
+
 // Path: settings.main.model.size.actions
 class Translations$settings$main$model$size$actions$en {
 	Translations$settings$main$model$size$actions$en._(this._root);
@@ -971,6 +1123,21 @@ class Translations$settings$main$model$size$actions$en {
 
 	/// en: 'More info'
 	String get moreInfo => 'More info';
+}
+
+// Path: settings.main.model.dialogs.discard
+class Translations$settings$main$model$dialogs$discard$en {
+	Translations$settings$main$model$dialogs$discard$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Discard model files'
+	String get title => 'Discard model files';
+
+	/// en: 'Delete all downloaded and partial files for {name: String}?'
+	String message({required String name}) => 'Delete all downloaded and partial files for ${name}?';
 }
 
 // Path: settings.main.model.dialogs.required
@@ -1110,6 +1277,8 @@ extension on Translations {
 			'common.actions.hide' => 'Hide',
 			'common.actions.keep' => 'Keep',
 			'common.actions.delete' => 'Delete',
+			'common.actions.copied' => 'Copied to clipboard',
+			'common.actions.copy' => 'Copy',
 			'common.status.success' => 'Successful operation',
 			'common.status.failed' => 'Something went wrong',
 			'common.status.preparing' => 'Preparing... please wait',
@@ -1145,14 +1314,14 @@ extension on Translations {
 			'docs.scan.preview.title' => ({required int current, required int total}) => '${current} / ${total}',
 			'docs.scan.preview.actions.add' => 'Scan More',
 			'docs.scan.preview.actions.save' => 'Save',
+			'docs.scan.preview.actions.showGroup' => ({required int count}) => 'Show Group (${count})',
+			'docs.scan.preview.tooltips.add' => 'Scan more documents.',
+			'docs.scan.preview.tooltips.delete' => 'Delete current document.',
+			'docs.scan.preview.tooltips.group' => 'Show all documents.',
 			'docs.scan.preview.fields.docName.label' => 'Document Name',
 			'docs.scan.preview.fields.docName.placeholder' => 'Enter Document Name',
 			'docs.scan.preview.fields.docName.errors.empty' => 'Document name cannot be empty.',
 			'docs.scan.preview.empty.title' => 'Scanned Documents',
-			'docs.scan.preview.bottomBar.actions.showGroup' => ({required int count}) => 'Show Group (${count})',
-			'docs.scan.preview.bottomBar.tooltips.add' => 'Scan more documents.',
-			'docs.scan.preview.bottomBar.tooltips.delete' => 'Delete current document.',
-			'docs.scan.preview.bottomBar.tooltips.group' => 'Show all documents.',
 			'docs.scan.preview.bottomSheet.title' => 'Group Details',
 			'docs.scan.preview.bottomSheet.fields.groupName.label' => 'Group Name',
 			'docs.scan.preview.bottomSheet.fields.groupName.placeholder' => 'Enter Group Name',
@@ -1167,12 +1336,25 @@ extension on Translations {
 			'docs.transcription.actions.view' => 'View transcription',
 			'docs.transcription.actions.viewImage' => 'View scanned image',
 			'docs.transcription.actions.retranscribe' => 'Re-transcribe page',
-			'docs.transcription.actions.start' => 'Transcribe Page',
+			'docs.transcription.actions.start' => 'Add to Queue',
+			'docs.transcription.actions.goToQueue' => 'Go to Queue',
+			'docs.transcription.actions.retry' => 'Retry Transcription',
 			'docs.transcription.status.queued' => 'Waiting in transcription queue...',
+			'docs.transcription.status.queuedAtPosition' => ({required int position}) => 'Waiting in queue (#${position})',
+			'docs.transcription.status.queuedDescription' => 'This page will be transcribed automatically when it reaches the front of the queue.',
 			'docs.transcription.status.streaming' => 'Transcribing page...',
+			'docs.transcription.status.warmingUp' => 'Preparing on-device OCR model...',
+			'docs.transcription.status.partialPreview' => 'Partial transcription so far',
 			'docs.transcription.empty.title' => 'No Transcription Yet',
 			'docs.transcription.empty.message' => 'Transcribe this scanned page offline into editable Markdown.',
-			'docs.transcription.stats' => ({required int words, required int seconds}) => '${words} words · ~${seconds}s read',
+			'docs.transcription.errors.failedTitle' => 'Transcription Failed',
+			'docs.transcription.stats.wordCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} word', other: '${n} words', ), 
+			'docs.transcription.stats.readTime' => ({required int seconds}) => '~${seconds}s read',
+			'docs.transcription.stats.transcribeTime' => ({required int seconds}) => 'Transcribed in ${seconds}s',
+			'jobs.transcription.title' => 'Transcribing documents',
+			'jobs.transcription.status.processing' => 'Processing page transcription',
+			'jobs.transcription.status.resuming' => 'Resuming page transcription',
+			'jobs.transcription.status.waitingToRetry' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Waiting to retry (${n} remaining)', other: 'Waiting to retry (${n} remaining)', ), 
 			'learn.main.title' => _root.common.navigation.learn,
 			'settings.main.title' => _root.common.navigation.settings,
 			'settings.main.model.title' => 'Transcription Model',
@@ -1181,14 +1363,27 @@ extension on Translations {
 			'settings.main.model.actions.resume' => 'Resume',
 			'settings.main.model.actions.retry' => 'Try again',
 			'settings.main.model.actions.cancel' => 'Cancel',
+			'settings.main.model.actions.completeSetup' => 'Complete setup',
+			'settings.main.model.actions.discard' => 'Discard',
 			'settings.main.model.status.ready' => 'Ready to use',
 			'settings.main.model.status.waitingForWifi' => 'Waiting for Wi-Fi...',
 			'settings.main.model.status.downloading' => ({required int progress}) => 'Downloading... ${progress}%',
 			'settings.main.model.status.verifying' => 'Verifying files integrity...',
+			'settings.main.model.status.preparing' => 'Preparing model files...',
+			'settings.main.model.status.integrating' => 'Integrating model with on-device engine...',
+			'settings.main.model.status.finishing' => 'Finalizing setup...',
+			'settings.main.model.status.done' => 'Model ready to use',
+			'settings.main.model.status.failed' => 'Model setup failed',
 			'settings.main.model.alerts.missing.title' => 'Model not downloaded',
 			'settings.main.model.alerts.missing.message' => 'Download this model to transcribe your pages. It\'s a one-time download.',
 			'settings.main.model.alerts.partial.title' => 'Download incomplete',
 			'settings.main.model.alerts.partial.message' => 'A previous download didn\'t finish. Resume to continue where it left off.',
+			'settings.main.model.alerts.unverified.title' => 'Verification incomplete',
+			'settings.main.model.alerts.unverified.message' => 'All files are downloaded, but integrity verification didn\'t finish.',
+			'settings.main.model.alerts.unintegrated.title' => 'Setup incomplete',
+			'settings.main.model.alerts.unintegrated.message' => 'Model files are verified, but runtime integration didn\'t finish.',
+			'settings.main.model.alerts.failed.title' => 'Model setup failed',
+			'settings.main.model.alerts.failed.message' => 'Something went wrong while preparing this model. Try again.',
 			'settings.main.model.errors.notEnoughStorage' => ({required String size}) => 'Not enough storage space. You need at least ${size} free to download this model.',
 			'settings.main.model.errors.noConnection' => 'No internet connection. Connect and try again.',
 			'settings.main.model.errors.serverUnreachable' => 'Couldn\'t reach the download server. Please try again later.',
@@ -1198,6 +1393,8 @@ extension on Translations {
 			'settings.main.model.size.label' => ({required String size}) => 'Download size: ${size}',
 			'settings.main.model.size.unavailable' => 'Download size unavailable',
 			'settings.main.model.size.actions.moreInfo' => 'More info',
+			'settings.main.model.dialogs.discard.title' => 'Discard model files',
+			'settings.main.model.dialogs.discard.message' => ({required String name}) => 'Delete all downloaded and partial files for ${name}?',
 			'settings.main.model.dialogs.required.title' => 'Download needed',
 			'settings.main.model.dialogs.required.message' => 'This model needs a one-time download before you can transcribe pages. You can leave the app while it downloads. Progress will show in a notification.',
 			'settings.main.model.dialogs.size.title' => 'Download size',

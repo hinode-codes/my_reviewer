@@ -14,7 +14,9 @@
     "done": "Done",
     "hide": "Hide",
     "keep": "Keep",
-    "delete": "Delete"
+    "delete": "Delete",
+    "copied": "Copied to clipboard",
+    "copy": "Copy"
   },
   "status": {
     "success": "Successful operation",

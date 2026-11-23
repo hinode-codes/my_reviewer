@@ -34,13 +34,17 @@ RouteBase get $mainShellRouteData => StatefulShellRouteData.$route(
                   hasOverriddenOnExit: false,
                   factory: $DocsGroupEditRouteData._fromState,
                 ),
-                GoRouteData.$route(
-                  path: ':docId',
-                  hasOverriddenOnExit: false,
-                  factory: $DocsPageViewerRouteData._fromState,
+                ShellRouteData.$route(
+                  navigatorKey: PageViewerShellRouteData.$navigatorKey,
+                  factory: $PageViewerShellRouteDataExtension._fromState,
                   routes: [
                     GoRouteData.$route(
-                      path: 'transcription',
+                      path: ':docId',
+                      hasOverriddenOnExit: false,
+                      factory: $DocsPageViewerRouteData._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: ':docId/transcription',
                       hasOverriddenOnExit: false,
                       factory: $DocsPageViewerTranscriptionRouteData._fromState,
                     ),
@@ -183,6 +187,11 @@ mixin $DocsGroupEditRouteData on GoRouteData {
   @override
   void replace(BuildContext context) =>
       context.replace(location, extra: _self.$extra);
+}
+
+extension $PageViewerShellRouteDataExtension on PageViewerShellRouteData {
+  static PageViewerShellRouteData _fromState(GoRouterState state) =>
+      const PageViewerShellRouteData();
 }
 
 mixin $DocsPageViewerRouteData on GoRouteData {

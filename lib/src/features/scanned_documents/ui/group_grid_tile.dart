@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:my_reviewer/src/features/scanned_documents/constants/ui_constants.dart';
 import 'package:my_reviewer/src/features/scanned_documents/models/scanned_document_group_model.dart';
+import 'package:my_reviewer/src/features/scanned_documents/utils/hero_tags.dart';
 import 'package:my_reviewer/src/locator.dart';
 import 'package:my_reviewer/src/routes.dart';
 import 'package:my_reviewer/src/shared/constants/stack_constants.dart';
@@ -40,7 +41,10 @@ class DocsGroupGridTile extends StatelessWidget {
             child: RepaintBoundary(
               key: ValueKey(_group.id),
               child: StackedThumbnailCard(
-                heroPrefix: _group.id,
+                heroTags: [
+                  for (final doc in visibleDocs)
+                    pageHeroTag(doc.groupId, doc.relativePath),
+                ],
                 imagePaths: [
                   for (final doc in visibleDocs)
                     _storageService.resolveAbsolutePath(doc.relativePath),

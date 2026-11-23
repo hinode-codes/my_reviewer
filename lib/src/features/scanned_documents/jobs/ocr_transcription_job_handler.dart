@@ -13,7 +13,7 @@ class OcrTranscriptionJobHandler implements IJobHandler {
     required this._storageService,
     required this._ocrEngine,
     required this._transcriptionWriteRepo,
-    this.checkpointEveryTokens = 25,
+    this.checkpointEveryTokens = 10,
     this.wordsPerMinute = 200,
   });
 
@@ -27,7 +27,7 @@ class OcrTranscriptionJobHandler implements IJobHandler {
   @override
   Future<void> execute(JobModel job, JobExecutionContext context) async {
     final payload = OcrJobPayload.fromRawJson(job.payload);
-    final absoluteImagePath = await _storageService.resolveAbsolutePath(
+    final absoluteImagePath = _storageService.resolveAbsolutePath(
       payload.relativePath,
     );
 

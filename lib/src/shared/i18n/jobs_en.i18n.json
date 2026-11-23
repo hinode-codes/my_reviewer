@@ -1,0 +1,13 @@
+{
+    "transcription": {
+        "title": "Transcribing documents",
+        "status": {
+            "processing": "Processing page transcription",
+            "resuming": "Resuming page transcription",
+            "waitingToRetry": {
+                "one": "Waiting to retry ({n} remaining)",
+                "other": "Waiting to retry ({n} remaining)"
+            }
+        }
+    }
+}

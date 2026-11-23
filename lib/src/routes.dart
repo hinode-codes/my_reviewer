@@ -2,28 +2,37 @@ import 'dart:async';
 
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:my_reviewer/src/controllers/docs/docs_controller.dart';
-import 'package:my_reviewer/src/controllers/docs/docs_scan_controller.dart';
-import 'package:my_reviewer/src/controllers/docs/group_controller.dart';
-import 'package:my_reviewer/src/controllers/docs/group_edit_controller.dart';
-import 'package:my_reviewer/src/controllers/docs/page_viewer_controller.dart';
-import 'package:my_reviewer/src/controllers/docs/transcription_viewer_controller.dart';
+import 'package:my_reviewer/src/features/scanned_documents/controllers/docs_main_controller.dart';
+import 'package:my_reviewer/src/features/scanned_documents/controllers/group_controller.dart';
+import 'package:my_reviewer/src/features/scanned_documents/controllers/group_edit_controller.dart';
+import 'package:my_reviewer/src/features/scanned_documents/controllers/page_transcription_controller.dart';
+import 'package:my_reviewer/src/features/scanned_documents/controllers/page_viewer_controller.dart';
+import 'package:my_reviewer/src/features/scanned_documents/controllers/scan_controller.dart';
 import 'package:my_reviewer/src/features/scanned_documents/models/scanned_document_group_model.dart';
 import 'package:my_reviewer/src/features/scanned_documents/models/scanned_document_model.dart';
+import 'package:my_reviewer/src/features/scanned_documents/screens/docs_main_screen.dart';
+import 'package:my_reviewer/src/features/scanned_documents/screens/group_edit_screen.dart';
+import 'package:my_reviewer/src/features/scanned_documents/screens/group_screen.dart';
+import 'package:my_reviewer/src/features/scanned_documents/screens/page_image_screen.dart';
+import 'package:my_reviewer/src/features/scanned_documents/screens/page_transcription_screen.dart';
+import 'package:my_reviewer/src/features/scanned_documents/screens/page_viewer_screen.dart';
+import 'package:my_reviewer/src/features/scanned_documents/screens/scan_preview_screen.dart';
+import 'package:my_reviewer/src/features/settings/controllers/settings_controller.dart';
+import 'package:my_reviewer/src/features/settings/screens/settings_screen.dart';
 import 'package:my_reviewer/src/locator.dart';
-import 'package:my_reviewer/src/screens/docs/docs_group_edit_screen.dart';
-import 'package:my_reviewer/src/screens/docs/docs_group_screen.dart';
-import 'package:my_reviewer/src/screens/docs/docs_page_transcription_screen.dart';
-import 'package:my_reviewer/src/screens/docs/docs_page_viewer_screen.dart';
-import 'package:my_reviewer/src/screens/docs/docs_scan_preview_screen.dart';
-import 'package:my_reviewer/src/screens/docs/docs_screen.dart';
-import 'package:my_reviewer/src/screens/main_page_screen.dart';
+import 'package:my_reviewer/src/shared/controllers/ai_model_selector_controller.dart';
 import 'package:provider/provider.dart';
+
+import 'main_page_screen.dart';
 
 part "routes.g.dart";
 
 final rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: "Root Navigator",
+);
+
+final pageViewerNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: "Page Viewer Navigator",
 );
 
 @TypedStatefulShellRoute<MainShellRouteData>(
@@ -38,11 +47,11 @@ final rootNavigatorKey = GlobalKey<NavigatorState>(
               path: "groups/:groupId",
               routes: <TypedRoute<RouteData>>[
                 TypedGoRoute<DocsGroupEditRouteData>(path: "edit"),
-                TypedGoRoute<DocsPageViewerRouteData>(
-                  path: ":docId",
+                TypedShellRoute<PageViewerShellRouteData>(
                   routes: <TypedRoute<RouteData>>[
+                    TypedGoRoute<DocsPageViewerRouteData>(path: ":docId"),
                     TypedGoRoute<DocsPageViewerTranscriptionRouteData>(
-                      path: "transcription",
+                      path: ":docId/transcription",
                     ),
                   ],
                 ),
@@ -52,13 +61,11 @@ final rootNavigatorKey = GlobalKey<NavigatorState>(
         ),
       ],
     ),
-
     TypedStatefulShellBranch<LearnShellBranchData>(
       routes: <TypedRoute<RouteData>>[
         TypedGoRoute<LearnRouteData>(path: "/learn"),
       ],
     ),
-
     TypedStatefulShellBranch<SettingsShellBranchData>(
       routes: <TypedRoute<RouteData>>[
         TypedGoRoute<SettingsRouteData>(path: "/settings"),
@@ -92,9 +99,9 @@ class DocsRouteData extends GoRouteData with $DocsRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return ChangeNotifierProvider<DocsController>(
-      create: (_) => getIt<DocsController>(),
-      child: DocsScreen(query: query),
+    return ChangeNotifierProvider<DocsMainController>(
+      create: (_) => getIt<DocsMainController>(),
+      child: DocsMainScreen(query: query),
     );
   }
 }
@@ -105,9 +112,9 @@ class DocsScanPreviewRouteData extends GoRouteData
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return ChangeNotifierProvider<DocsScanController>(
-      create: (_) => getIt<DocsScanController>(),
-      child: const DocsScanPreviewScreen(),
+    return ChangeNotifierProvider<ScanController>(
+      create: (_) => getIt<ScanController>(),
+      child: const ScanPreviewScreen(),
     );
   }
 }
@@ -120,11 +127,11 @@ class DocsGroupRouteData extends GoRouteData with $DocsGroupRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return ChangeNotifierProvider<DocsGroupController>(
-      create: (_) => getIt<DocsGroupController>(
-        param1: (docId: groupId, initialDocuments: $extra),
+    return ChangeNotifierProvider<GroupController>(
+      create: (_) => getIt<GroupController>(
+        param1: (groupId: groupId, initialDocuments: $extra),
       ),
-      child: const DocsGroupScreen(),
+      child: const GroupScreen(),
     );
   }
 }
@@ -139,16 +146,47 @@ class DocsGroupEditRouteData extends GoRouteData with $DocsGroupEditRouteData {
   Widget build(BuildContext context, GoRouterState state) {
     return ChangeNotifierProvider<GroupEditController>(
       create: (_) {
-        final thing = getIt<GroupEditController>(
+        final controller = getIt<GroupEditController>(
           param1: groupId,
           param2: $extra,
         );
 
-        unawaited(thing.initialize());
+        unawaited(controller.initialize());
 
-        return thing;
+        return controller;
       },
-      child: const DocsGroupEditScreen(),
+      child: const GroupEditScreen(),
+    );
+  }
+}
+
+class PageViewerShellRouteData extends ShellRouteData {
+  const PageViewerShellRouteData();
+
+  static final GlobalKey<NavigatorState> $navigatorKey = pageViewerNavigatorKey;
+
+  @override
+  Widget builder(BuildContext context, GoRouterState state, Widget navigator) {
+    final groupId = state.pathParameters['groupId']!;
+    final docId = state.pathParameters['docId']!;
+    final extra = state.extra;
+    final initialDocuments = extra is List<ScannedDocumentModel> ? extra : null;
+
+    return ChangeNotifierProvider<PageViewerController>(
+      create: (_) {
+        final controller = getIt<PageViewerController>(
+          param1: (
+            groupId: groupId,
+            docId: docId,
+            initialDocuments: initialDocuments,
+          ),
+        );
+
+        unawaited(controller.initialize());
+
+        return controller;
+      },
+      child: PageViewerScreen(navigator: navigator),
     );
   }
 }
@@ -173,18 +211,7 @@ class DocsPageViewerRouteData extends GoRouteData
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return ChangeNotifierProvider<DocsPageViewerController>(
-      create: (_) {
-        final controller = getIt<DocsPageViewerController>(
-          param1: (groupId: groupId, docId: docId, initialDocuments: $extra),
-        );
-
-        unawaited(controller.initialize());
-
-        return controller;
-      },
-      child: const DocsPageViewerScreen(),
-    );
+    return const DocsPageImageScreen();
   }
 }
 
@@ -202,17 +229,9 @@ class DocsPageViewerTranscriptionRouteData extends GoRouteData
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return ChangeNotifierProvider<TranscriptionViewerController>(
-      create: (_) {
-        final controller = getIt<TranscriptionViewerController>(
-          param1: (groupId: groupId, docId: docId, initialDocuments: $extra),
-        );
-
-        unawaited(controller.initialize());
-
-        return controller;
-      },
-      child: const DocsPageTranscriptionScreen(),
+    return ChangeNotifierProvider<PageTranscriptionController>(
+      create: (_) => getIt<PageTranscriptionController>(param1: groupId),
+      child: const PageTranscriptionScreen(),
     );
   }
 }
@@ -226,7 +245,7 @@ class LearnRouteData extends GoRouteData with $LearnRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return Center(child: Text("Learn"));
+    return const Center(child: Text("Learn"));
   }
 }
 
@@ -239,6 +258,22 @@ class SettingsRouteData extends GoRouteData with $SettingsRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return Center(child: Text("Settings"));
+    final settingsController = getIt<SettingsController>();
+    final modelSelectorController = getIt<AiModelSelectorController>();
+
+    unawaited(settingsController.initialize());
+    unawaited(modelSelectorController.initialize());
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<SettingsController>.value(
+          value: settingsController,
+        ),
+        ChangeNotifierProvider<AiModelSelectorController>.value(
+          value: modelSelectorController,
+        ),
+      ],
+      child: const SettingsScreen(),
+    );
   }
 }

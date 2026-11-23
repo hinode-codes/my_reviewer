@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:my_reviewer/src/shared/db/models/jobs_db_model.dart';
+import 'package:my_reviewer/src/shared/i18n/gen/strings.g.dart';
 import 'package:my_reviewer/src/shared/models/job_cancelled_exception.dart';
 import 'package:my_reviewer/src/shared/models/job_dispatch_request.dart';
 import 'package:my_reviewer/src/shared/repositories/jobs/i_job_read_repository.dart';
@@ -37,7 +38,6 @@ class LocalJobQueueRunner implements IJobDispatcher {
   Timer? _pollTimer;
 
   int _sessionCompleted = 0;
-  int _sessionTotal = 0;
 
   /// Call once during app initialization after DB & DI setup.
   Future<void> start() async {
@@ -58,7 +58,6 @@ class LocalJobQueueRunner implements IJobDispatcher {
     _disposed = true;
 
     _pollTimer?.cancel();
-
     _pollTimer = null;
 
     await _notifications.dismiss();
@@ -83,8 +82,6 @@ class LocalJobQueueRunner implements IJobDispatcher {
       maxAttempts: maxAttempts,
       deduplicateActiveByItemKey: deduplicateActiveByItemKey,
     );
-
-    _sessionTotal++;
 
     unawaited(_drain());
 
@@ -112,8 +109,6 @@ class LocalJobQueueRunner implements IJobDispatcher {
 
       ids.add(jobId);
     }
-
-    _sessionTotal += requests.length;
 
     unawaited(_drain());
 
@@ -146,7 +141,6 @@ class LocalJobQueueRunner implements IJobDispatcher {
     );
 
     if (requeued) {
-      _sessionTotal++;
       unawaited(_drain());
     }
 
@@ -168,22 +162,18 @@ class LocalJobQueueRunner implements IJobDispatcher {
           break;
         }
 
-        // Reconcile session total if jobs were recovered on app startup.
         final queuedRemaining = (await _readRepo.getByStatus(JobStatus.queued))
             .length;
-        final estimatedTotal = _sessionCompleted + 1 + queuedRemaining;
-
-        if (estimatedTotal > _sessionTotal) {
-          _sessionTotal = estimatedTotal;
-        }
+        final current = _sessionCompleted + 1;
+        final total = current + queuedRemaining;
 
         await _notifications.showOrUpdate(
-          title: 'Transcribing documents',
+          title: t.jobs.transcription.title,
           body: job.canResumeFromPrefill
-              ? 'Resuming page transcription'
-              : 'Processing page transcription',
-          current: _sessionCompleted + 1,
-          total: _sessionTotal,
+              ? t.jobs.transcription.status.resuming
+              : t.jobs.transcription.status.processing,
+          current: current,
+          total: total,
         );
 
         String? latestPartial = job.partialOutput;
@@ -216,7 +206,7 @@ class LocalJobQueueRunner implements IJobDispatcher {
           );
           _sessionCompleted++;
         } on JobCancelledException {
-          // Job was already marked `cancelled` externally; do nothing.// Job was already marked `cancelled` externally; do nothing.
+          // Job was already marked `cancelled` externally; do nothing.
         } catch (error) {
           await _writeRepo.recordFailure(
             jobId: job.id,
@@ -240,16 +230,29 @@ class LocalJobQueueRunner implements IJobDispatcher {
 
     if (queued.isEmpty && running.isEmpty) {
       _sessionCompleted = 0;
-      _sessionTotal = 0;
 
       await _notifications.dismiss();
+    } else if (_isProcessing && running.isNotEmpty) {
+      // Mid-batch cancellation occurred while another job is still running:
+      // immediately shrink the notification denominator to match the DB.
+      final current = _sessionCompleted + 1;
+      final total = _sessionCompleted + running.length + queued.length;
+
+      await _notifications.showOrUpdate(
+        title: t.jobs.transcription.title,
+        body: t.jobs.transcription.status.processing,
+        current: current,
+        total: total,
+      );
     } else if (!_isProcessing && queued.isNotEmpty) {
       // Jobs exist with a future `runAfter` backoff delay.
+      final total = _sessionCompleted + queued.length;
+
       await _notifications.showOrUpdate(
-        title: 'Transcribing documents',
-        body: 'Waiting to retry (${queued.length} remaining)',
-        current: running.length,
-        total: running.length + queued.length,
+        title: t.jobs.transcription.title,
+        body: t.jobs.transcription.status.waitingToRetry(n: queued.length),
+        current: _sessionCompleted,
+        total: total,
       );
     }
   }

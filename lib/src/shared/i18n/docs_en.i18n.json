@@ -49,7 +49,13 @@
       "title": "{current: int} / {total: int}",
       "actions": {
         "add": "Scan More",
-        "save": "Save"
+        "save": "Save",
+        "showGroup": "Show Group ({count: int})"
+      },
+      "tooltips": {
+        "add": "Scan more documents.",
+        "delete": "Delete current document.",
+        "group": "Show all documents."
       },
       "fields": {
         "docName": {
@@ -62,16 +68,6 @@
       },
       "empty": {
         "title": "Scanned Documents"
-      },
-      "bottomBar": {
-        "actions": {
-          "showGroup": "Show Group ({count: int})"
-        },
-        "tooltips": {
-          "add": "Scan more documents.",
-          "delete": "Delete current document.",
-          "group": "Show all documents."
-        }
       },
       "bottomSheet": {
         "title": "Group Details",
@@ -117,16 +113,32 @@
       "view": "View transcription",
       "viewImage": "View scanned image",
       "retranscribe": "Re-transcribe page",
-      "start": "Transcribe Page"
+      "start": "Add to Queue",
+      "goToQueue": "Go to Queue",
+      "retry": "Retry Transcription"
     },
     "status": {
       "queued": "Waiting in transcription queue...",
-      "streaming": "Transcribing page..."
+      "queuedAtPosition": "Waiting in queue (#{position: int})",
+      "queuedDescription": "This page will be transcribed automatically when it reaches the front of the queue.",
+      "streaming": "Transcribing page...",
+      "warmingUp": "Preparing on-device OCR model...",
+      "partialPreview": "Partial transcription so far"
     },
     "empty": {
       "title": "No Transcription Yet",
       "message": "Transcribe this scanned page offline into editable Markdown."
     },
-    "stats": "{words: int} words · ~{seconds: int}s read"
+    "errors": {
+      "failedTitle": "Transcription Failed"
+    },
+    "stats": {
+      "wordCount": {
+        "one": "{n} word",
+        "other": "{n} words"
+      },
+      "readTime": "~{seconds: int}s read",
+      "transcribeTime": "Transcribed in {seconds: int}s"
+    }
   }
 }
