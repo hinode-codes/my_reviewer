@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import 'i_job_notification_service.dart';
@@ -63,10 +64,19 @@ class AndroidJobNotificationService implements IJobNotificationService {
       return false;
     }
 
-    final permission =
-        await FlutterForegroundTask.checkNotificationPermission();
+    try {
+      final permission =
+          await FlutterForegroundTask.checkNotificationPermission();
+      
+      if (permission != NotificationPermission.granted) {
+        return false;
+      }
+    } on PlatformException {
+      // Headless background engine has no Activity attached; proceed to post
+      // via NotificationManager (Android silently drops it if permission is denied).
+    }
 
-    return permission == NotificationPermission.granted;
+    return true;
   }
 
   @override

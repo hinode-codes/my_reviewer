@@ -1,6 +1,9 @@
 import 'package:my_reviewer/src/shared/models/job_dispatch_request.dart';
 
 abstract interface class IJobDispatcher {
+  /// Call once during app initialization after DB & DI setup.
+  Future<void> initialize();
+
   /// Enqueues a job, wakes the background runner immediately, and updates the
   /// persistent notification (if enabled by the user).
   Future<String> dispatch({
@@ -26,4 +29,6 @@ abstract interface class IJobDispatcher {
 
   /// Re-queues a dead-letter job and wakes the runner.
   Future<bool> retryDeadJob(String jobId, {bool resetProgress = false});
+
+  void dispose();
 }

@@ -11,29 +11,16 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final s = t.settings.main;
     final settingsController = context.watch<SettingsController>();
-
-    final settingsTheme = SettingsThemeData(
-      settingsListBackground: colorScheme.surface,
-      settingsSectionBackground: colorScheme.surfaceContainerLow,
-      titleTextColor: colorScheme.primary,
-      settingsTileTextColor: colorScheme.onSurface,
-      tileDescriptionTextColor: colorScheme.onSurfaceVariant,
-      leadingIconsColor: colorScheme.onSurfaceVariant,
-      dividerColor: colorScheme.outlineVariant,
-    );
 
     return Scaffold(
       appBar: AppBar(title: Text(s.title)),
       body: SettingsList(
-        lightTheme: settingsTheme,
-        darkTheme: settingsTheme,
         sections: [
-          AiModelSelectorSection(
-            taskKind: TaskKind.download,
-            extraTiles: [
+          AiModelSelectorSection(taskKind: TaskKind.download),
+          SettingsSection(
+            tiles: [
               SettingsTile.switchTile(
                 leading: const Icon(Icons.wifi_outlined),
                 title: Text(s.downloads.fields.wifiOnly.label),

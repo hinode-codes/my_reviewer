@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:get_it/get_it.dart';
 import 'package:my_reviewer/src/features/scanned_documents/controllers/docs_main_controller.dart';
 import 'package:my_reviewer/src/features/scanned_documents/controllers/group_controller.dart';
@@ -27,6 +28,7 @@ import 'package:my_reviewer/src/features/scanned_documents/services/ml_kit_docum
 import 'package:my_reviewer/src/features/scanned_documents/use_cases/delete_scanned_documents_use_case.dart';
 import 'package:my_reviewer/src/features/scanned_documents/use_cases/delete_scanned_group_use_case.dart';
 import 'package:my_reviewer/src/features/scanned_documents/use_cases/delete_scanned_groups_use_case.dart';
+import 'package:my_reviewer/src/features/scanned_documents/use_cases/save_and_transcribe_documents_use_case.dart';
 import 'package:my_reviewer/src/features/scanned_documents/use_cases/update_scanned_group_use_case.dart';
 import 'package:my_reviewer/src/features/settings/controllers/settings_controller.dart';
 import 'package:my_reviewer/src/shared/controllers/ai_model_selector_controller.dart';
@@ -41,6 +43,8 @@ import 'package:my_reviewer/src/shared/services/ai_models/ai_model_provisioner.d
 import 'package:my_reviewer/src/shared/services/ai_models/ai_runtime_initializer.dart';
 import 'package:my_reviewer/src/shared/services/ai_models/edge_ai_ocr_integrator.dart';
 import 'package:my_reviewer/src/shared/services/ai_models/i_ai_model_integrator.dart';
+import 'package:my_reviewer/src/shared/services/app_settings_service.dart';
+import 'package:my_reviewer/src/shared/services/jobs/foreground_task_job_dispatcher.dart';
 import 'package:my_reviewer/src/shared/services/jobs/i_job_dispatcher.dart';
 import 'package:my_reviewer/src/shared/services/jobs/i_job_handler.dart';
 import 'package:my_reviewer/src/shared/services/jobs/local_job_queue_runner.dart';
@@ -54,20 +58,22 @@ import 'package:my_reviewer/src/shared/services/storage/i_file_storage_service.d
 
 final getIt = GetIt.instance;
 
-Future<void> setupLocator({
-  NotificationPreferenceReader? isJobNotificationEnabled,
-  ModelIdReader? readSelectedOcrModelId,
-  ModelIdWriter? writeSelectedOcrModelId,
-  WifiOnlyPreferenceReader? readWifiOnlyDownloads,
-  WifiOnlyPreferenceWriter? writeWifiOnlyDownloads,
-  AuthTokenReader? readHuggingFaceToken,
-}) async {
+Future<void> setupLocator({bool isBackgroundWorker = false}) async {
   // --- Core Infrastructure & Storage ---
   final storageService = await DiskFileStorageService.create();
 
   getIt.registerSingleton<IFileStorageService>(storageService);
 
-  getIt.registerLazySingleton<AppDatabase>(() => AppDatabase());
+  final settingsService = AppSettingsService();
+
+  await settingsService.initialize();
+
+  getIt.registerSingleton<AppSettingsService>(settingsService);
+
+  getIt.registerLazySingleton<AppDatabase>(
+    () => AppDatabase(),
+    dispose: (db) => db.close(),
+  );
 
   // --- DAOs ---
   getIt.registerLazySingleton<ScannedDocumentDao>(
@@ -90,16 +96,12 @@ Future<void> setupLocator({
         LocalJobWriteRepository(db: getIt<AppDatabase>(), dao: getIt<JobDao>()),
   );
 
-  // --- Device & Platform Services ---
-  getIt.registerLazySingleton<IDocumentScannerService>(
-    () => MlKitDocumentScannerService(),
-  );
-  getIt.registerLazySingleton<ISoundService>(() => SoLoudSoundService());
+  // --- Notifications ---
   getIt.registerLazySingleton<IJobNotificationService>(
     () => Platform.isAndroid
         ? AndroidJobNotificationService(
             isUserNotificationEnabled:
-                isJobNotificationEnabled ?? () async => true,
+                getIt<AppSettingsService>().isJobNotificationEnabled,
           )
         : const NoopJobNotificationService(),
   );
@@ -132,41 +134,60 @@ Future<void> setupLocator({
       storageService: getIt<IFileStorageService>(),
     ),
   );
-
-  // --- Offline OCR Engine, AI Model Provisioning & Runtime ---
   getIt.registerLazySingleton<ILocalOcrEngine>(
     () => EdgeAiQwenOcrEngine(),
     dispose: (engine) => engine.dispose(),
   );
 
-  await _registerAiModels(
-    readSelectedOcrModelId: readSelectedOcrModelId,
-    writeSelectedOcrModelId: writeSelectedOcrModelId,
-    readWifiOnlyDownloads: readWifiOnlyDownloads,
-    writeWifiOnlyDownloads: writeWifiOnlyDownloads,
-    readHuggingFaceToken: readHuggingFaceToken,
+  await _registerAiModels();
+
+  // --- Background Worker Isolate Only ---
+  if (isBackgroundWorker) {
+    getIt.registerLazySingleton<IJobHandler>(
+      () => OcrTranscriptionJobHandler(
+        storageService: getIt<IFileStorageService>(),
+        ocrEngine: getIt<ILocalOcrEngine>(),
+        transcriptionWriteRepo: getIt<ITranscriptionWriteRepository>(),
+      ),
+    );
+
+    getIt.registerLazySingleton<LocalJobQueueRunner>(
+      () => LocalJobQueueRunner(
+        readRepo: getIt<IJobReadRepository>(),
+        writeRepo: getIt<IJobWriteRepository>(),
+        handler: getIt<IJobHandler>(),
+        notifications: getIt<IJobNotificationService>(),
+        onQueueIdle: () async {
+          if (await FlutterForegroundTask.isRunningService) {
+            await FlutterForegroundTask.stopService();
+          }
+        },
+      ),
+      dispose: (runner) => runner.dispose(),
+    );
+
+    getIt.registerLazySingleton<IJobDispatcher>(
+      () => getIt<LocalJobQueueRunner>(),
+    );
+
+    return;
+  }
+
+  // --- UI Isolate Only ---
+  getIt.registerLazySingleton<IDocumentScannerService>(
+    () => MlKitDocumentScannerService(),
+    dispose: (service) => service.dispose(),
+  );
+  getIt.registerLazySingleton<ISoundService>(
+    () => SoLoudSoundService(),
+    dispose: (service) => service.dispose(),
   );
 
-  // --- Job Handler & Queue Runner ---
-  getIt.registerLazySingleton<IJobHandler>(
-    () => OcrTranscriptionJobHandler(
-      storageService: getIt<IFileStorageService>(),
-      ocrEngine: getIt<ILocalOcrEngine>(),
-      transcriptionWriteRepo: getIt<ITranscriptionWriteRepository>(),
-    ),
-  );
-
-  getIt.registerLazySingleton<LocalJobQueueRunner>(
-    () => LocalJobQueueRunner(
+  getIt.registerLazySingleton<IJobDispatcher>(
+    () => ForegroundTaskJobDispatcher(
       readRepo: getIt<IJobReadRepository>(),
       writeRepo: getIt<IJobWriteRepository>(),
-      handler: getIt<IJobHandler>(),
-      notifications: getIt<IJobNotificationService>(),
     ),
-    dispose: (runner) => runner.dispose(),
-  );
-  getIt.registerLazySingleton<IJobDispatcher>(
-    () => getIt<LocalJobQueueRunner>(),
   );
 
   // --- Use Cases ---
@@ -201,6 +222,14 @@ Future<void> setupLocator({
     ),
   );
 
+  getIt.registerLazySingleton<SaveScannedGroupUseCase>(
+    () => SaveScannedGroupUseCase(
+      readRepo: getIt<IScannedDocumentReadRepository>(),
+      writeRepo: getIt<IScannedDocumentWriteRepository>(),
+      jobDispatcher: getIt<IJobDispatcher>(),
+    ),
+  );
+
   // --- Screen Controllers (Factories, disposed on route pop) ---
   getIt.registerFactory<DocsMainController>(
     () => DocsMainController(
@@ -211,7 +240,7 @@ Future<void> setupLocator({
 
   getIt.registerFactory<ScanController>(
     () => ScanController(
-      writeRepository: getIt<IScannedDocumentWriteRepository>(),
+      saveScannedGroupUseCase: getIt<SaveScannedGroupUseCase>(),
       scanner: getIt<IDocumentScannerService>(),
       storageService: getIt<IFileStorageService>(),
     ),
@@ -269,34 +298,13 @@ Future<void> setupLocator({
   });
 }
 
-Future<void> _registerAiModels({
-  ModelIdReader? readSelectedOcrModelId,
-  ModelIdWriter? writeSelectedOcrModelId,
-  WifiOnlyPreferenceReader? readWifiOnlyDownloads,
-  WifiOnlyPreferenceWriter? writeWifiOnlyDownloads,
-  AuthTokenReader? readHuggingFaceToken,
-}) async {
-  String? inMemorySelectedId;
-  bool inMemoryWifiOnly = true;
-
-  final readModelId = readSelectedOcrModelId ?? () async => inMemorySelectedId;
-  final writeModelId =
-      writeSelectedOcrModelId ??
-      (String id) async {
-        inMemorySelectedId = id;
-      };
-
-  final readWifiOnly = readWifiOnlyDownloads ?? () async => inMemoryWifiOnly;
-  final writeWifiOnly =
-      writeWifiOnlyDownloads ??
-      (bool value) async {
-        inMemoryWifiOnly = value;
-      };
+Future<void> _registerAiModels() async {
+  final settings = getIt<AppSettingsService>();
 
   final runtimeInitializer = AiRuntimeInitializer(
     storageService: getIt<IFileStorageService>(),
     registeredModels: OcrModelCatalog.all,
-    readActiveModelId: readModelId,
+    readActiveModelId: settings.getSelectedOcrModelId,
   );
   await runtimeInitializer.initialize();
   getIt.registerSingleton<AiRuntimeInitializer>(runtimeInitializer);
@@ -309,6 +317,7 @@ Future<void> _registerAiModels({
     () => AiModelProvisioner(
       storageService: getIt<IFileStorageService>(),
       integrators: [getIt<IAiModelIntegrator>()],
+      notifications: getIt<IJobNotificationService>(),
     ),
   );
 
@@ -316,19 +325,13 @@ Future<void> _registerAiModels({
     () => AiModelSelectorController(
       models: OcrModelCatalog.all,
       provisioner: getIt<AiModelProvisioner>(),
-      readSelectedModelId: readModelId,
-      writeSelectedModelId: writeModelId,
-      readWifiOnly: readWifiOnly,
-      readAuthToken: readHuggingFaceToken,
+      settingsService: settings,
     ),
     dispose: (controller) => controller.dispose(),
   );
 
   getIt.registerLazySingleton<SettingsController>(
-    () => SettingsController(
-      readWifiOnly: readWifiOnly,
-      writeWifiOnly: writeWifiOnly,
-    ),
+    () => SettingsController(settingsService: settings),
     dispose: (controller) => controller.dispose(),
   );
 }

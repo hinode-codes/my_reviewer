@@ -72,4 +72,9 @@ class SoLoudSoundService implements ISoundService {
       debugPrint('UI sound $sound failed to play: $err');
     }
   }
+
+  @override
+  void dispose() {
+    _soloud.deinit();
+  }
 }

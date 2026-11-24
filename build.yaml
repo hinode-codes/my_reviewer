@@ -9,3 +9,13 @@ targets:
           main_namespace: common
           string_interpolation: braces
           output_directory: lib/src/shared/i18n/gen
+          imports:
+            - package:my_reviewer/src/shared/models/ai_model.dart
+            - package:my_reviewer/src/shared/services/ai_models/ai_model_provisioner.dart
+          contexts:
+            AiModelInstallPhase:
+              default_parameter: context
+              generate_enum: false
+            ProvisionPhase:
+              default_parameter: context
+              generate_enum: false

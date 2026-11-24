@@ -5,4 +5,5 @@ import 'package:my_reviewer/src/shared/models/sound.dart';
 abstract interface class ISoundService {
   Future<void> initialize();
   void play(UiSound sound);
+  void dispose();
 }

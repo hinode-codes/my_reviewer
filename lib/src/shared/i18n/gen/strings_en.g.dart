@@ -653,6 +653,24 @@ class Translations$settings$main$model$en {
 	/// en: 'Choose the model used to transcribe your scanned pages on this device.'
 	String get description => 'Choose the model used to transcribe your scanned pages on this device.';
 
+	/// en: '(ready) {{subtitle} • Ready to use} (notInstalled) {This model is not downloaded.} (partialDownload) {This model is partially downloaded.} (downloadedUnverified) {This model has not been verified yet.} (verifiedUnintegrated) {This model is verified but not integrated with the on-device engine.} (failed) {Something went wrong while preparing this model.}'
+	String subtitle({required AiModelInstallPhase context, required Object subtitle}) {
+		switch (context) {
+			case AiModelInstallPhase.ready:
+				return '${subtitle} • ${_root.settings.main.model.status.ready}';
+			case AiModelInstallPhase.notInstalled:
+				return 'This model is not downloaded.';
+			case AiModelInstallPhase.partialDownload:
+				return 'This model is partially downloaded.';
+			case AiModelInstallPhase.downloadedUnverified:
+				return 'This model has not been verified yet.';
+			case AiModelInstallPhase.verifiedUnintegrated:
+				return 'This model is verified but not integrated with the on-device engine.';
+			case AiModelInstallPhase.failed:
+				return 'Something went wrong while preparing this model.';
+		}
+	}
+
 	late final Translations$settings$main$model$actions$en actions = Translations$settings$main$model$actions$en._(_root);
 	late final Translations$settings$main$model$status$en status = Translations$settings$main$model$status$en._(_root);
 	late final Translations$settings$main$model$alerts$en alerts = Translations$settings$main$model$alerts$en._(_root);
@@ -854,10 +872,10 @@ class Translations$settings$main$model$actions$en {
 	String get resume => 'Resume';
 
 	/// en: 'Try again'
-	String get retry => 'Try again';
+	String get retry => _root.common.actions.retry;
 
 	/// en: 'Cancel'
-	String get cancel => 'Cancel';
+	String get cancel => _root.common.actions.cancel;
 
 	/// en: 'Complete setup'
 	String get completeSetup => 'Complete setup';
@@ -900,6 +918,18 @@ class Translations$settings$main$model$status$en {
 
 	/// en: 'Model setup failed'
 	String get failed => 'Model setup failed';
+
+	/// en: '(downloading) {Downloading... {progress: int}%} (verifying) {Verifying files integrity...} (integrating) {Integrating model with on-device engine...}'
+	String processing({required ProvisionPhase context, required int progress}) {
+		switch (context) {
+			case ProvisionPhase.downloading:
+				return _root.settings.main.model.status.downloading(progress: progress);
+			case ProvisionPhase.verifying:
+				return _root.settings.main.model.status.verifying;
+			case ProvisionPhase.integrating:
+				return _root.settings.main.model.status.integrating;
+		}
+	}
 }
 
 // Path: settings.main.model.alerts
@@ -909,6 +939,7 @@ class Translations$settings$main$model$alerts$en {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+	late final Translations$settings$main$model$alerts$banner$en banner = Translations$settings$main$model$alerts$banner$en._(_root);
 	late final Translations$settings$main$model$alerts$missing$en missing = Translations$settings$main$model$alerts$missing$en._(_root);
 	late final Translations$settings$main$model$alerts$partial$en partial = Translations$settings$main$model$alerts$partial$en._(_root);
 	late final Translations$settings$main$model$alerts$unverified$en unverified = Translations$settings$main$model$alerts$unverified$en._(_root);
@@ -967,6 +998,7 @@ class Translations$settings$main$model$dialogs$en {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+	late final Translations$settings$main$model$dialogs$setup$en setup = Translations$settings$main$model$dialogs$setup$en._(_root);
 	late final Translations$settings$main$model$dialogs$discard$en discard = Translations$settings$main$model$dialogs$discard$en._(_root);
 	late final Translations$settings$main$model$dialogs$required$en required = Translations$settings$main$model$dialogs$required$en._(_root);
 	late final Translations$settings$main$model$dialogs$size$en size = Translations$settings$main$model$dialogs$size$en._(_root);
@@ -990,8 +1022,23 @@ class Translations$settings$main$notifications$download$en {
 
 	// Translations
 
-	/// en: 'Downloading transcription model'
-	String get title => 'Downloading transcription model';
+	/// en: 'Downloading {name: String}'
+	String title({required String name}) => 'Downloading ${name}';
+
+	/// en: 'Setting up {name: String}'
+	String setupTitle({required String name}) => 'Setting up ${name}';
+
+	/// en: '{name: String} downloaded'
+	String complete({required String name}) => '${name} downloaded';
+
+	/// en: 'Download paused: {name: String}'
+	String paused({required String name}) => 'Download paused: ${name}';
+
+	/// en: 'Download canceled: {name: String}'
+	String canceled({required String name}) => 'Download canceled: ${name}';
+
+	/// en: 'Download failed: {name: String}'
+	String failed({required String name}) => 'Download failed: ${name}';
 
 	late final Translations$settings$main$notifications$download$status$en status = Translations$settings$main$notifications$download$status$en._(_root);
 }
@@ -1036,6 +1083,54 @@ class Translations$docs$scan$preview$bottomSheet$fields$en {
 
 	// Translations
 	late final Translations$docs$scan$preview$bottomSheet$fields$groupName$en groupName = Translations$docs$scan$preview$bottomSheet$fields$groupName$en._(_root);
+}
+
+// Path: settings.main.model.alerts.banner
+class Translations$settings$main$model$alerts$banner$en {
+	Translations$settings$main$model$alerts$banner$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: '(notInstalled) {Model not downloaded} (partialDownload) {Download incomplete} (downloadedUnverified) {Verification incomplete} (verifiedUnintegrated) {Setup incomplete} (failed) {Model setup failed} (ready) {}'
+	String title({required AiModelInstallPhase context}) {
+		switch (context) {
+			case AiModelInstallPhase.notInstalled:
+				return _root.settings.main.model.alerts.missing.title;
+			case AiModelInstallPhase.partialDownload:
+				return _root.settings.main.model.alerts.partial.title;
+			case AiModelInstallPhase.downloadedUnverified:
+				return _root.settings.main.model.alerts.unverified.title;
+			case AiModelInstallPhase.verifiedUnintegrated:
+				return _root.settings.main.model.alerts.unintegrated.title;
+			case AiModelInstallPhase.failed:
+				return _root.settings.main.model.alerts.failed.title;
+			case AiModelInstallPhase.ready:
+				return '';
+		}
+	}
+
+	/// en: '(notInstalled) {Download this model to transcribe your pages. It's a one-time download.} (partialDownload) {A previous download didn't finish. Resume to continue where it left off.} (downloadedUnverified) {All files are downloaded, but integrity verification didn't finish.} (verifiedUnintegrated) {Model files are verified, but runtime integration didn't finish.} (failed) {{error}} (ready) {}'
+	String message({required AiModelInstallPhase context, required Object error}) {
+		switch (context) {
+			case AiModelInstallPhase.notInstalled:
+				return _root.settings.main.model.alerts.missing.message;
+			case AiModelInstallPhase.partialDownload:
+				return _root.settings.main.model.alerts.partial.message;
+			case AiModelInstallPhase.downloadedUnverified:
+				return _root.settings.main.model.alerts.unverified.message;
+			case AiModelInstallPhase.verifiedUnintegrated:
+				return _root.settings.main.model.alerts.unintegrated.message;
+			case AiModelInstallPhase.failed:
+				return '${error}';
+			case AiModelInstallPhase.ready:
+				return '';
+		}
+	}
+
+	/// en: '(notInstalled) {Download} (partialDownload) {Resume} (downloadedUnverified) {Complete setup} (verifiedUnintegrated) {Complete setup} (failed) {Try again} (ready) {}'
+	String actionLabel({required AiModelInstallPhase context}) => _root.settings.main.model.dialogs.setup.confirmLabel(context: context);
 }
 
 // Path: settings.main.model.alerts.missing
@@ -1125,6 +1220,69 @@ class Translations$settings$main$model$size$actions$en {
 	String get moreInfo => 'More info';
 }
 
+// Path: settings.main.model.dialogs.setup
+class Translations$settings$main$model$dialogs$setup$en {
+	Translations$settings$main$model$dialogs$setup$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: '(notInstalled) {Download needed} (partialDownload) {Download incomplete} (downloadedUnverified) {Verification incomplete} (verifiedUnintegrated) {Setup incomplete} (failed) {Model setup failed} (ready) {}'
+	String title({required AiModelInstallPhase context}) {
+		switch (context) {
+			case AiModelInstallPhase.notInstalled:
+				return _root.settings.main.model.dialogs.required.title;
+			case AiModelInstallPhase.partialDownload:
+				return _root.settings.main.model.alerts.partial.title;
+			case AiModelInstallPhase.downloadedUnverified:
+				return _root.settings.main.model.alerts.unverified.title;
+			case AiModelInstallPhase.verifiedUnintegrated:
+				return _root.settings.main.model.alerts.unintegrated.title;
+			case AiModelInstallPhase.failed:
+				return _root.settings.main.model.alerts.failed.title;
+			case AiModelInstallPhase.ready:
+				return '';
+		}
+	}
+
+	/// en: '(notInstalled) {This model needs a one-time download before you can transcribe pages. You can leave the app while it downloads. Progress will show in a notification. Download size: {size: String}} (partialDownload) {A previous download didn't finish. Resume to continue where it left off.} (downloadedUnverified) {All files are downloaded, but integrity verification didn't finish.} (verifiedUnintegrated) {Model files are verified, but runtime integration didn't finish.} (failed) {{error}} (ready) {}'
+	String message({required AiModelInstallPhase context, required String size, required Object error}) {
+		switch (context) {
+			case AiModelInstallPhase.notInstalled:
+				return '${_root.settings.main.model.dialogs.required.message}\n\n${_root.settings.main.model.size.label(size: size)}';
+			case AiModelInstallPhase.partialDownload:
+				return _root.settings.main.model.alerts.partial.message;
+			case AiModelInstallPhase.downloadedUnverified:
+				return _root.settings.main.model.alerts.unverified.message;
+			case AiModelInstallPhase.verifiedUnintegrated:
+				return _root.settings.main.model.alerts.unintegrated.message;
+			case AiModelInstallPhase.failed:
+				return '${error}';
+			case AiModelInstallPhase.ready:
+				return '';
+		}
+	}
+
+	/// en: '(notInstalled) {Download} (partialDownload) {Resume} (downloadedUnverified) {Complete setup} (verifiedUnintegrated) {Complete setup} (failed) {Try again} (ready) {}'
+	String confirmLabel({required AiModelInstallPhase context}) {
+		switch (context) {
+			case AiModelInstallPhase.notInstalled:
+				return _root.settings.main.model.actions.download;
+			case AiModelInstallPhase.partialDownload:
+				return _root.settings.main.model.actions.resume;
+			case AiModelInstallPhase.downloadedUnverified:
+				return _root.settings.main.model.actions.completeSetup;
+			case AiModelInstallPhase.verifiedUnintegrated:
+				return _root.settings.main.model.actions.completeSetup;
+			case AiModelInstallPhase.failed:
+				return _root.settings.main.model.actions.retry;
+			case AiModelInstallPhase.ready:
+				return '';
+		}
+	}
+}
+
 // Path: settings.main.model.dialogs.discard
 class Translations$settings$main$model$dialogs$discard$en {
 	Translations$settings$main$model$dialogs$discard$en._(this._root);
@@ -1165,6 +1323,9 @@ class Translations$settings$main$model$dialogs$size$en {
 
 	/// en: 'Download size'
 	String get title => 'Download size';
+
+	/// en: 'Total size: {size: String} (one) {{n} file} (other) {{n} files}'
+	String message({required String size, required num n}) => '${_root.settings.main.model.dialogs.size.total(size: size)}\n${_root.settings.main.model.dialogs.size.fileCount(n: n)}';
 
 	/// en: 'Total size: {size: String}'
 	String total({required String size}) => 'Total size: ${size}';
@@ -1207,6 +1368,9 @@ class Translations$settings$main$notifications$download$status$en {
 
 	/// en: 'Verifying files integrity...'
 	String get verifying => _root.settings.main.model.status.verifying;
+
+	/// en: 'Integrating model with on-device engine...'
+	String get integrating => _root.settings.main.model.status.integrating;
 
 	/// en: 'Model ready to use'
 	String get done => 'Model ready to use';
@@ -1359,10 +1523,11 @@ extension on Translations {
 			'settings.main.title' => _root.common.navigation.settings,
 			'settings.main.model.title' => 'Transcription Model',
 			'settings.main.model.description' => 'Choose the model used to transcribe your scanned pages on this device.',
+			'settings.main.model.subtitle' => ({required AiModelInstallPhase context, required Object subtitle}) { switch (context) { case AiModelInstallPhase.ready: return '${subtitle} • ${_root.settings.main.model.status.ready}'; case AiModelInstallPhase.notInstalled: return 'This model is not downloaded.'; case AiModelInstallPhase.partialDownload: return 'This model is partially downloaded.'; case AiModelInstallPhase.downloadedUnverified: return 'This model has not been verified yet.'; case AiModelInstallPhase.verifiedUnintegrated: return 'This model is verified but not integrated with the on-device engine.'; case AiModelInstallPhase.failed: return 'Something went wrong while preparing this model.'; } }, 
 			'settings.main.model.actions.download' => 'Download',
 			'settings.main.model.actions.resume' => 'Resume',
-			'settings.main.model.actions.retry' => 'Try again',
-			'settings.main.model.actions.cancel' => 'Cancel',
+			'settings.main.model.actions.retry' => _root.common.actions.retry,
+			'settings.main.model.actions.cancel' => _root.common.actions.cancel,
 			'settings.main.model.actions.completeSetup' => 'Complete setup',
 			'settings.main.model.actions.discard' => 'Discard',
 			'settings.main.model.status.ready' => 'Ready to use',
@@ -1374,6 +1539,10 @@ extension on Translations {
 			'settings.main.model.status.finishing' => 'Finalizing setup...',
 			'settings.main.model.status.done' => 'Model ready to use',
 			'settings.main.model.status.failed' => 'Model setup failed',
+			'settings.main.model.status.processing' => ({required ProvisionPhase context, required int progress}) { switch (context) { case ProvisionPhase.downloading: return _root.settings.main.model.status.downloading(progress: progress); case ProvisionPhase.verifying: return _root.settings.main.model.status.verifying; case ProvisionPhase.integrating: return _root.settings.main.model.status.integrating; } }, 
+			'settings.main.model.alerts.banner.title' => ({required AiModelInstallPhase context}) { switch (context) { case AiModelInstallPhase.notInstalled: return _root.settings.main.model.alerts.missing.title; case AiModelInstallPhase.partialDownload: return _root.settings.main.model.alerts.partial.title; case AiModelInstallPhase.downloadedUnverified: return _root.settings.main.model.alerts.unverified.title; case AiModelInstallPhase.verifiedUnintegrated: return _root.settings.main.model.alerts.unintegrated.title; case AiModelInstallPhase.failed: return _root.settings.main.model.alerts.failed.title; case AiModelInstallPhase.ready: return ''; } }, 
+			'settings.main.model.alerts.banner.message' => ({required AiModelInstallPhase context, required Object error}) { switch (context) { case AiModelInstallPhase.notInstalled: return _root.settings.main.model.alerts.missing.message; case AiModelInstallPhase.partialDownload: return _root.settings.main.model.alerts.partial.message; case AiModelInstallPhase.downloadedUnverified: return _root.settings.main.model.alerts.unverified.message; case AiModelInstallPhase.verifiedUnintegrated: return _root.settings.main.model.alerts.unintegrated.message; case AiModelInstallPhase.failed: return '${error}'; case AiModelInstallPhase.ready: return ''; } }, 
+			'settings.main.model.alerts.banner.actionLabel' => ({required AiModelInstallPhase context}) => _root.settings.main.model.dialogs.setup.confirmLabel(context: context),
 			'settings.main.model.alerts.missing.title' => 'Model not downloaded',
 			'settings.main.model.alerts.missing.message' => 'Download this model to transcribe your pages. It\'s a one-time download.',
 			'settings.main.model.alerts.partial.title' => 'Download incomplete',
@@ -1393,19 +1562,29 @@ extension on Translations {
 			'settings.main.model.size.label' => ({required String size}) => 'Download size: ${size}',
 			'settings.main.model.size.unavailable' => 'Download size unavailable',
 			'settings.main.model.size.actions.moreInfo' => 'More info',
+			'settings.main.model.dialogs.setup.title' => ({required AiModelInstallPhase context}) { switch (context) { case AiModelInstallPhase.notInstalled: return _root.settings.main.model.dialogs.required.title; case AiModelInstallPhase.partialDownload: return _root.settings.main.model.alerts.partial.title; case AiModelInstallPhase.downloadedUnverified: return _root.settings.main.model.alerts.unverified.title; case AiModelInstallPhase.verifiedUnintegrated: return _root.settings.main.model.alerts.unintegrated.title; case AiModelInstallPhase.failed: return _root.settings.main.model.alerts.failed.title; case AiModelInstallPhase.ready: return ''; } }, 
+			'settings.main.model.dialogs.setup.message' => ({required AiModelInstallPhase context, required String size, required Object error}) { switch (context) { case AiModelInstallPhase.notInstalled: return '${_root.settings.main.model.dialogs.required.message}\n\n${_root.settings.main.model.size.label(size: size)}'; case AiModelInstallPhase.partialDownload: return _root.settings.main.model.alerts.partial.message; case AiModelInstallPhase.downloadedUnverified: return _root.settings.main.model.alerts.unverified.message; case AiModelInstallPhase.verifiedUnintegrated: return _root.settings.main.model.alerts.unintegrated.message; case AiModelInstallPhase.failed: return '${error}'; case AiModelInstallPhase.ready: return ''; } }, 
+			'settings.main.model.dialogs.setup.confirmLabel' => ({required AiModelInstallPhase context}) { switch (context) { case AiModelInstallPhase.notInstalled: return _root.settings.main.model.actions.download; case AiModelInstallPhase.partialDownload: return _root.settings.main.model.actions.resume; case AiModelInstallPhase.downloadedUnverified: return _root.settings.main.model.actions.completeSetup; case AiModelInstallPhase.verifiedUnintegrated: return _root.settings.main.model.actions.completeSetup; case AiModelInstallPhase.failed: return _root.settings.main.model.actions.retry; case AiModelInstallPhase.ready: return ''; } }, 
 			'settings.main.model.dialogs.discard.title' => 'Discard model files',
 			'settings.main.model.dialogs.discard.message' => ({required String name}) => 'Delete all downloaded and partial files for ${name}?',
 			'settings.main.model.dialogs.required.title' => 'Download needed',
 			'settings.main.model.dialogs.required.message' => 'This model needs a one-time download before you can transcribe pages. You can leave the app while it downloads. Progress will show in a notification.',
 			'settings.main.model.dialogs.size.title' => 'Download size',
+			'settings.main.model.dialogs.size.message' => ({required String size, required num n}) => '${_root.settings.main.model.dialogs.size.total(size: size)}\n${_root.settings.main.model.dialogs.size.fileCount(n: n)}',
 			'settings.main.model.dialogs.size.total' => ({required String size}) => 'Total size: ${size}',
 			'settings.main.model.dialogs.size.fileCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} file', other: '${n} files', ), 
 			'settings.main.downloads.fields.wifiOnly.label' => 'Use Wi-Fi for large downloads',
 			'settings.main.downloads.fields.wifiOnly.description' => 'Large downloads wait for Wi-Fi instead of using mobile data.',
-			'settings.main.notifications.download.title' => 'Downloading transcription model',
+			'settings.main.notifications.download.title' => ({required String name}) => 'Downloading ${name}',
+			'settings.main.notifications.download.setupTitle' => ({required String name}) => 'Setting up ${name}',
+			'settings.main.notifications.download.complete' => ({required String name}) => '${name} downloaded',
+			'settings.main.notifications.download.paused' => ({required String name}) => 'Download paused: ${name}',
+			'settings.main.notifications.download.canceled' => ({required String name}) => 'Download canceled: ${name}',
+			'settings.main.notifications.download.failed' => ({required String name}) => 'Download failed: ${name}',
 			'settings.main.notifications.download.status.downloading' => ({required int progress}) => _root.settings.main.model.status.downloading(progress: progress),
 			'settings.main.notifications.download.status.waitingForWifi' => _root.settings.main.model.status.waitingForWifi,
 			'settings.main.notifications.download.status.verifying' => _root.settings.main.model.status.verifying,
+			'settings.main.notifications.download.status.integrating' => _root.settings.main.model.status.integrating,
 			'settings.main.notifications.download.status.done' => 'Model ready to use',
 			'settings.main.notifications.download.status.failed' => 'Download failed',
 			_ => null,

@@ -2,130 +2,139 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:background_downloader/background_downloader.dart';
-import 'package:crypto/crypto.dart';
+import 'package:my_reviewer/src/shared/i18n/gen/strings.g.dart';
 import 'package:my_reviewer/src/shared/models/ai_model.dart';
-import 'package:my_reviewer/src/shared/models/task.dart' hide TaskStatus;
+import 'package:my_reviewer/src/shared/models/artifact_download.dart';
+import 'package:my_reviewer/src/shared/models/task.dart';
+import 'package:my_reviewer/src/shared/services/ai_models/background_artifact_downloader.dart';
+import 'package:my_reviewer/src/shared/services/ai_models/i_artifact_downloader.dart';
+import 'package:my_reviewer/src/shared/services/notifications/i_job_notification_service.dart';
+import 'package:my_reviewer/src/shared/services/notifications/no_op_job_notification_service.dart';
 import 'package:my_reviewer/src/shared/services/storage/i_file_storage_service.dart';
+import 'package:my_reviewer/src/shared/utils/retry.dart';
 import 'package:path/path.dart' as p;
 
+import 'artifact_integrity_verifier.dart';
 import 'i_ai_model_integrator.dart';
 
-enum ProvisionPhase { downloading, verifying, integrating }
+/// Granular lifecycle stages reported while [AiModelProvisioner.provision]
+/// executes its download, checksum verification, and runtime integration steps.
+enum ProvisionPhase {
+  /// Downloading one or more model artifacts.
+  downloading,
 
+  /// Streaming downloaded files to verify their SHA-256 digests.
+  verifying,
+
+  /// Registering verified artifact paths with the active [IAiModelIntegrator].
+  integrating,
+}
+
+/// Orchestrates inspection, 3-stage provisioning, and cleanup for [AiModelSpec]
+/// bundles using injectable [IArtifactDownloader], [ArtifactIntegrityVerifier],
+/// and [IAiModelIntegrator] collaborators.
 class AiModelProvisioner {
   AiModelProvisioner({
     required this._storageService,
     required this._integrators,
-  });
+    IArtifactDownloader? downloader,
+    this._verifier = const ArtifactIntegrityVerifier(),
+    this._notifications = const NoopJobNotificationService(),
+  }) : _downloader = downloader ?? BackgroundArtifactDownloader();
 
   final IFileStorageService _storageService;
   final List<IAiModelIntegrator> _integrators;
+  final IArtifactDownloader _downloader;
+  final ArtifactIntegrityVerifier _verifier;
+  final IJobNotificationService _notifications;
 
   static const String _verifiedMarkerFile = '.verified';
   static const String _integratedMarkerFile = '.integrated';
+  static const int _maxTransientDownloadAttempts = 3;
 
-  /// Inspects disk + background_downloader task database to detect:
-  /// - `notInstalled`
-  /// - `partialDownload` (paused/interrupted downloader task or incomplete files)
-  /// - `downloadedUnverified` (all files present, SHA-256 marker missing)
-  /// - `verifiedUnintegrated` (SHA-256 verified, EdgeAI integration interrupted)
-  /// - `ready`
+  /// Inspects local storage and downloader task records to determine the
+  /// current [AiModelStatus] for [spec].
   Future<AiModelStatus> inspect(AiModelSpec spec, {String? lastError}) async {
     final dirPath = _resolveDirPath(spec);
     final dir = Directory(dirPath);
+    final records = await _downloader.recordsForGroup(_groupFor(spec));
 
-    final downloaderRecords = await FileDownloader().database.allRecords(
-      group: _groupFor(spec),
-    );
-    final activeOrPausedRecords = downloaderRecords
-        .where((r) => r.status != TaskStatus.complete)
-        .toList();
-
-    if (!await dir.exists() && activeOrPausedRecords.isEmpty) {
-      return AiModelStatus(
-        spec: spec,
-        phase: lastError != null
-            ? AiModelInstallPhase.failed
-            : AiModelInstallPhase.notInstalled,
-        errorMessage: lastError,
+    if (!await dir.exists() && records.isEmpty) {
+      return _status(
+        spec,
+        phase: AiModelInstallPhase.notInstalled,
+        lastError: lastError,
       );
     }
 
-    int downloadedBytes = 0;
-    bool hasAnyArtifactOrTask = activeOrPausedRecords.isNotEmpty;
-    bool allFilesPresent = true;
+    var downloadedBytes = 0;
+    var hasAnyArtifactOrTask = false;
+    var allFilesPresent = true;
 
     for (final artifact in spec.artifacts) {
-      final finalFile = File(p.join(dirPath, artifact.fileName));
-      final matchingRecord = downloaderRecords
-          .where((r) => r.taskId == _taskIdFor(spec, artifact))
-          .firstOrNull;
+      final taskId = _taskIdFor(spec, artifact);
+      final file = File(p.join(dirPath, artifact.fileName));
+      final record = records.where((r) => r.taskId == taskId).firstOrNull;
 
-      if (await finalFile.exists() &&
-          (matchingRecord == null ||
-              matchingRecord.status == TaskStatus.complete)) {
+      final fileExists = await file.exists();
+      final len = fileExists ? await file.length() : 0;
+      final isComplete = _isArtifactComplete(
+        artifact: artifact,
+        fileLength: len,
+        recordComplete: record?.isComplete ?? false,
+      );
+
+      if (isComplete) {
         hasAnyArtifactOrTask = true;
-        final len = await finalFile.length();
-
         downloadedBytes += len;
-
-        if (artifact.expectedBytes > 0 && len < artifact.expectedBytes) {
-          allFilesPresent = false;
+        if (record != null && !record.isComplete) {
+          await _downloader.deleteRecord(taskId);
         }
       } else {
         allFilesPresent = false;
-
-        if (matchingRecord != null && artifact.expectedBytes > 0) {
-          downloadedBytes +=
-              (matchingRecord.progress.clamp(0.0, 1.0) * artifact.expectedBytes)
-                  .round();
+        if (len > 0) {
+          hasAnyArtifactOrTask = true;
+          downloadedBytes += len;
+        } else if (record != null) {
+          hasAnyArtifactOrTask = true;
+          if (artifact.expectedBytes > 0) {
+            downloadedBytes +=
+                (record.progress.clamp(0.0, 1.0) * artifact.expectedBytes)
+                    .round();
+          }
         }
       }
     }
 
     if (!hasAnyArtifactOrTask) {
-      return AiModelStatus(
-        spec: spec,
-        phase: lastError != null
-            ? AiModelInstallPhase.failed
-            : AiModelInstallPhase.notInstalled,
-        errorMessage: lastError,
+      return _status(
+        spec,
+        phase: AiModelInstallPhase.notInstalled,
+        lastError: lastError,
       );
     }
-
-    if (!allFilesPresent || activeOrPausedRecords.isNotEmpty) {
-      return AiModelStatus(
-        spec: spec,
-        phase: lastError != null
-            ? AiModelInstallPhase.failed
-            : AiModelInstallPhase.partialDownload,
+    if (!allFilesPresent) {
+      return _status(
+        spec,
+        phase: AiModelInstallPhase.partialDownload,
         downloadedBytes: downloadedBytes,
-        errorMessage: lastError,
+        lastError: lastError,
       );
     }
-
-    final verifiedMarker = File(p.join(dirPath, _verifiedMarkerFile));
-    if (!await verifiedMarker.exists()) {
-      return AiModelStatus(
-        spec: spec,
-        phase: lastError != null
-            ? AiModelInstallPhase.failed
-            : AiModelInstallPhase.downloadedUnverified,
+    if (!await File(p.join(dirPath, _verifiedMarkerFile)).exists()) {
+      return _status(
+        spec,
+        phase: AiModelInstallPhase.downloadedUnverified,
         downloadedBytes: downloadedBytes,
-        errorMessage: lastError,
+        lastError: lastError,
       );
     }
-
-    final integratedMarker = File(p.join(dirPath, _integratedMarkerFile));
-    if (!await integratedMarker.exists()) {
-      return AiModelStatus(
-        spec: spec,
-        phase: lastError != null
-            ? AiModelInstallPhase.failed
-            : AiModelInstallPhase.verifiedUnintegrated,
+    if (!await File(p.join(dirPath, _integratedMarkerFile)).exists()) {
+      return _status(
+        spec,
+        phase: AiModelInstallPhase.verifiedUnintegrated,
         downloadedBytes: downloadedBytes,
-        errorMessage: lastError,
+        lastError: lastError,
       );
     }
 
@@ -136,10 +145,8 @@ class AiModelProvisioner {
     );
   }
 
-  /// Runs the 3-step pipeline:
-  /// 1. Download (resumes paused/interrupted tasks via `background_downloader`)
-  /// 2. Verify SHA-256 digests
-  /// 3. Integrate into `flutter_edge_ai`
+  /// Executes the 3-stage provisioning pipeline: Download (0–100%), Verify
+  /// (indeterminate), and Integrate (indeterminate).
   Future<void> provision(
     AiModelSpec spec, {
     String? authToken,
@@ -149,43 +156,57 @@ class AiModelProvisioner {
   }) async {
     onProgress?.call(const TaskProgress.preparing());
 
-    final counter = TaskProgressCounter(total: 100, onProgress: onProgress);
-
+    final downloadCounter = TaskProgressCounter(
+      total: 100,
+      onProgress: onProgress,
+    );
     final dir = await _storageService.ensureDirectory(
       spec.relativeSubDirectories,
       root: spec.storageRoot,
     );
     final dirPath = dir.path;
+    final notif = t.settings.main.notifications.download;
 
-    // Step 1: Download files (0 -> 80)
-    onPhaseChanged?.call(ProvisionPhase.downloading);
-    await _downloadArtifacts(
-      spec,
-      dirPath: dirPath,
-      authToken: authToken,
-      requiresWiFi: requiresWiFi,
-      counter: counter,
-    );
+    try {
+      onPhaseChanged?.call(ProvisionPhase.downloading);
+      await _downloadArtifacts(
+        spec,
+        dirPath: dirPath,
+        authToken: authToken,
+        requiresWiFi: requiresWiFi,
+        counter: downloadCounter,
+      );
 
-    // Step 2: Verify SHA-256 checksums (80 -> 90)
-    onPhaseChanged?.call(ProvisionPhase.verifying);
-    await _verifyArtifacts(spec, dirPath: dirPath, counter: counter);
+      onPhaseChanged?.call(ProvisionPhase.verifying);
+      onProgress?.call(const TaskProgress.processing(current: 0, total: 0));
+      await _notifications.showOrUpdate(
+        title: notif.setupTitle(name: spec.displayName),
+        body: notif.status.verifying,
+        current: 0,
+        total: 0,
+      );
+      await _verifyArtifacts(spec, dirPath: dirPath);
 
-    // Step 3: Integrate into runtime (90 -> 100)
-    onPhaseChanged?.call(ProvisionPhase.integrating);
-    await _integrateArtifacts(spec, dirPath: dirPath, counter: counter);
+      onPhaseChanged?.call(ProvisionPhase.integrating);
+      onProgress?.call(const TaskProgress.processing(current: 0, total: 0));
+      await _notifications.showOrUpdate(
+        title: notif.setupTitle(name: spec.displayName),
+        body: notif.status.integrating,
+        current: 0,
+        total: 0,
+      );
+      await _integrateArtifacts(spec, dirPath: dirPath);
 
-    onProgress?.call(const TaskProgress.finishing());
+      onProgress?.call(const TaskProgress.finishing());
+    } finally {
+      await _notifications.dismiss();
+    }
   }
 
+  /// Cancels active downloader tasks, unintegrates [spec], and deletes all
+  /// model files on disk.
   Future<void> deleteModelFiles(AiModelSpec spec) async {
-    final group = _groupFor(spec);
-    final records = await FileDownloader().database.allRecords(group: group);
-    if (records.isNotEmpty) {
-      final taskIds = records.map((r) => r.taskId).toList();
-      await FileDownloader().cancelTasksWithIds(taskIds);
-      await FileDownloader().database.deleteRecordsWithIds(taskIds);
-    }
+    await _downloader.cancelAndDeleteGroup(_groupFor(spec));
 
     for (final integrator in _integrators) {
       if (integrator.supports(spec)) {
@@ -203,75 +224,71 @@ class AiModelProvisioner {
     required bool requiresWiFi,
     required TaskProgressCounter counter,
   }) async {
+    final group = _groupFor(spec);
+    
+    _downloader.configureGroupNotifications(
+      group: group,
+      displayName: spec.displayName,
+    );
+
     final totalBytes = spec.totalBytes;
-    int completedBytesBeforeCurrent = 0;
+    var completedBytesBeforeCurrent = 0;
 
     for (final artifact in spec.artifacts) {
       final finalPath = p.join(dirPath, artifact.fileName);
       final finalFile = File(finalPath);
       final taskId = _taskIdFor(spec, artifact);
-      final existingRecord = await FileDownloader().database.recordForId(
-        taskId,
-      );
+      final existingRecord = await _downloader.recordForTask(taskId);
 
-      if (await finalFile.exists() &&
-          (existingRecord == null ||
-              existingRecord.status == TaskStatus.complete)) {
+      if (await finalFile.exists()) {
         final len = await finalFile.length();
-        if (artifact.expectedBytes <= 0 || len == artifact.expectedBytes) {
+        final recordComplete = existingRecord?.isComplete ?? false;
+
+        if (_isArtifactComplete(
+          artifact: artifact,
+          fileLength: len,
+          recordComplete: recordComplete,
+        )) {
+          if (existingRecord != null && !recordComplete) {
+            await _downloader.deleteRecord(taskId);
+          }
+
           completedBytesBeforeCurrent += len;
+
           continue;
         }
         await finalFile.delete();
       }
 
-      // Any new/resumed download invalidates prior verification/integration markers.
       _storageService.deleteQuietlyBatch([
         p.join(dirPath, _verifiedMarkerFile),
         p.join(dirPath, _integratedMarkerFile),
       ]);
 
-      final freshTask = DownloadTask(
-        taskId: taskId,
-        group: _groupFor(spec),
-        url: artifact.downloadUrl,
-        filename: artifact.fileName,
-        directory: dirPath,
-        baseDirectory: BaseDirectory.root,
-        requiresWiFi: requiresWiFi,
-        allowPause: true,
-        updates: Updates.statusAndProgress,
-        headers: {
-          if (authToken != null && authToken.isNotEmpty)
-            HttpHeaders.authorizationHeader: 'Bearer $authToken',
-        },
-      );
-
-      final existingTask = existingRecord?.task;
-      final canResume =
-          existingRecord != null &&
-          (existingRecord.status == TaskStatus.paused ||
-              existingRecord.status == TaskStatus.failed) &&
-          existingTask is DownloadTask &&
-          await FileDownloader().taskCanResume(existingTask);
-
-      final finalUpdate = await _enqueueOrResumeAndAwait(
-        freshTask: freshTask,
-        resumableTask: canResume ? existingTask : null,
-        onProgress: (fraction) => _reportDownloadProgress(
-          fraction: fraction,
-          artifactBytes: artifact.expectedBytes,
-          completedBefore: completedBytesBeforeCurrent,
-          totalBytes: totalBytes,
-          counter: counter,
+      final result = await retryAsync<ArtifactDownloadResult>(
+        (_) => _downloader.downloadOrResume(
+          group: group,
+          taskId: taskId,
+          url: artifact.downloadUrl,
+          fileName: artifact.fileName,
+          directoryPath: dirPath,
+          requiresWiFi: requiresWiFi,
+          authToken: authToken,
+          onProgress: (fraction) => _reportDownloadProgress(
+            fraction: fraction,
+            artifactBytes: artifact.expectedBytes,
+            completedBefore: completedBytesBeforeCurrent,
+            totalBytes: totalBytes,
+            counter: counter,
+          ),
         ),
+        maxAttempts: _maxTransientDownloadAttempts,
+        shouldRetry: (r) => !r.isComplete && r.isTransientFailure,
       );
 
-      if (finalUpdate.status != TaskStatus.complete) {
+      if (!result.isComplete) {
         throw StateError(
-          finalUpdate.exception?.description ??
-              'Download failed for ${artifact.fileName} '
-                  '(${finalUpdate.status.name})',
+          result.errorDescription ?? 'Download failed for ${artifact.fileName}',
         );
       }
 
@@ -279,124 +296,24 @@ class AiModelProvisioner {
     }
   }
 
-  /// Enqueues [freshTask]—or resumes [resumableTask] via `FileDownloader().resume(task)`—
-  /// and listens to `FileDownloader().updates` until that `taskId` reaches a final
-  /// `TaskStatus` (`complete`, `failed`, `canceled`, `notFound`).
-  Future<TaskStatusUpdate> _enqueueOrResumeAndAwait({
-    required DownloadTask freshTask,
-    DownloadTask? resumableTask,
-    required void Function(double fraction) onProgress,
-  }) async {
-    final completer = Completer<TaskStatusUpdate>();
-    final targetTaskId = freshTask.taskId;
-
-    late final StreamSubscription<TaskUpdate> sub;
-    sub = FileDownloader().updates.listen(
-      (update) {
-        if (update.task.taskId != targetTaskId) {
-          return;
-        }
-
-        switch (update) {
-          case TaskProgressUpdate(:final progress):
-            onProgress(progress);
-          case TaskStatusUpdate(:final status):
-            if (status.isFinalState && !completer.isCompleted) {
-              completer.complete(update);
-            }
-        }
-      },
-      onError: (Object error, StackTrace stackTrace) {
-        if (!completer.isCompleted) {
-          completer.completeError(error, stackTrace);
-        }
-      },
-    );
-
-    try {
-      bool started = false;
-
-      if (resumableTask != null) {
-        started = await FileDownloader().resume(resumableTask);
-      }
-
-      if (!started) {
-        // Clean up any stale non-resumable DB record before enqueueing fresh.
-        await FileDownloader().database.deleteRecordWithId(targetTaskId);
-
-        started = await FileDownloader().enqueue(freshTask);
-      }
-
-      if (!started) {
-        throw StateError('Failed to enqueue download task $targetTaskId');
-      }
-
-      return await completer.future;
-    } finally {
-      await sub.cancel();
-    }
-  }
-
-  void _reportDownloadProgress({
-    required double fraction,
-    required int artifactBytes,
-    required int completedBefore,
-    required int totalBytes,
-    required TaskProgressCounter counter,
-  }) {
-    if (totalBytes <= 0 || fraction < 0) {
-      return;
-    }
-
-    final currentTotal =
-        completedBefore + (fraction.clamp(0.0, 1.0) * artifactBytes).round();
-    // 0% -> 80% of overall TaskDialog progress bar allocated to download.
-    final step = ((currentTotal / totalBytes) * 80).round().clamp(1, 80);
-
-    counter.set(step);
-  }
-
   Future<void> _verifyArtifacts(
     AiModelSpec spec, {
     required String dirPath,
-    required TaskProgressCounter counter,
   }) async {
     final verifiedMarker = File(p.join(dirPath, _verifiedMarkerFile));
 
     if (await verifiedMarker.exists()) {
-      counter.set(90);
       return;
     }
 
-    for (var i = 0; i < spec.artifacts.length; i++) {
-      final artifact = spec.artifacts[i];
-      final file = File(p.join(dirPath, artifact.fileName));
-
-      if (!await file.exists()) {
-        throw FileSystemException('Missing downloaded artifact', file.path);
-      }
-
-      final expectedSha = artifact.sha256?.trim().toLowerCase();
-  
-      if (expectedSha != null && expectedSha.isNotEmpty) {
-        final digest = await sha256.bind(file.openRead()).first;
-  
-        if (digest.toString().toLowerCase() != expectedSha) {
-          _storageService.deleteQuietly(file.path);
-          await FileDownloader().database.deleteRecordWithId(
-            _taskIdFor(spec, artifact),
-          );
-  
-          throw StateError(
-            'Checksum mismatch for ${artifact.fileName} '
-            '(expected $expectedSha, got $digest)',
-          );
-        }
-      }
-
-      final step = 80 + (((i + 1) / spec.artifacts.length) * 10).round();
-      counter.set(step);
-    }
+    await _verifier.verifyAll(
+      artifacts: spec.artifacts,
+      directoryPath: dirPath,
+      onCorruptedArtifact: (artifact, filePath) async {
+        _storageService.deleteQuietly(filePath);
+        await _downloader.deleteRecord(_taskIdFor(spec, artifact));
+      },
+    );
 
     await verifiedMarker.writeAsString(
       jsonEncode({'verifiedAt': DateTime.now().toIso8601String()}),
@@ -407,17 +324,9 @@ class AiModelProvisioner {
   Future<void> _integrateArtifacts(
     AiModelSpec spec, {
     required String dirPath,
-    required TaskProgressCounter counter,
   }) async {
     final integratedMarker = File(p.join(dirPath, _integratedMarkerFile));
-
-    if (await integratedMarker.exists()) {
-      counter.set(100);
-  
-      return;
-    }
-
-    counter.set(92);
+    if (await integratedMarker.exists()) return;
 
     final resolvedPaths = <AiModelFileRole, String>{
       for (final artifact in spec.artifacts)
@@ -436,8 +345,49 @@ class AiModelProvisioner {
       jsonEncode({'integratedAt': DateTime.now().toIso8601String()}),
       flush: true,
     );
+  }
 
-    counter.set(100);
+  bool _isArtifactComplete({
+    required AiModelArtifact artifact,
+    required int fileLength,
+    required bool recordComplete,
+  }) {
+    if (fileLength <= 0) {
+      return false;
+    }
+
+    final sizeMatches =
+        artifact.expectedBytes <= 0 || fileLength >= artifact.expectedBytes;
+
+    return recordComplete || sizeMatches;
+  }
+
+  AiModelStatus _status(
+    AiModelSpec spec, {
+    required AiModelInstallPhase phase,
+    int downloadedBytes = 0,
+    String? lastError,
+  }) => AiModelStatus(
+    spec: spec,
+    phase: lastError != null ? AiModelInstallPhase.failed : phase,
+    downloadedBytes: downloadedBytes,
+    errorMessage: lastError,
+  );
+
+  void _reportDownloadProgress({
+    required double fraction,
+    required int artifactBytes,
+    required int completedBefore,
+    required int totalBytes,
+    required TaskProgressCounter counter,
+  }) {
+    if (totalBytes <= 0 || fraction < 0) return;
+
+    final currentTotal =
+        completedBefore + (fraction.clamp(0.0, 1.0) * artifactBytes).round();
+    final step = ((currentTotal / totalBytes) * 100).round().clamp(1, 100);
+
+    counter.set(step);
   }
 
   String _groupFor(AiModelSpec spec) => 'ai_model_${spec.id}';

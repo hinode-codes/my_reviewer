@@ -26,4 +26,7 @@ class MlKitDocumentScannerService implements IDocumentScannerService {
       documentScanner.close();
     }
   }
+
+  @override
+  void dispose() {}
 }

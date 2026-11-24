@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:my_reviewer/src/shared/db/models/jobs_db_model.dart';
 import 'package:my_reviewer/src/shared/i18n/gen/strings.g.dart';
 import 'package:my_reviewer/src/shared/models/job_cancelled_exception.dart';
 import 'package:my_reviewer/src/shared/models/job_dispatch_request.dart';
+import 'package:my_reviewer/src/shared/models/job_model.dart';
 import 'package:my_reviewer/src/shared/repositories/jobs/i_job_read_repository.dart';
 import 'package:my_reviewer/src/shared/repositories/jobs/i_job_write_repository.dart';
 import 'package:my_reviewer/src/shared/services/jobs/job_execution_context.dart';
@@ -17,48 +19,98 @@ class LocalJobQueueRunner implements IJobDispatcher {
     required this._readRepo,
     required this._writeRepo,
     required this._handler,
+    this.onQueueIdle,
     required this._notifications,
     this.staleLeaseThreshold = const Duration(seconds: 30),
     this.pollInterval = const Duration(seconds: 5),
     this.retryBackoff = const Duration(seconds: 5),
+    this.executionTimeout = const Duration(minutes: 5),
   });
 
   final IJobReadRepository _readRepo;
   final IJobWriteRepository _writeRepo;
   final IJobHandler _handler;
   final IJobNotificationService _notifications;
+  final Future<void> Function()? onQueueIdle;
 
   final Duration staleLeaseThreshold;
   final Duration pollInterval;
   final Duration retryBackoff;
+  final Duration executionTimeout;
 
-  bool _started = false;
+  Future<void>? _initFuture;
   bool _isProcessing = false;
+  bool _isSweeping = false;
   bool _disposed = false;
+
   Timer? _pollTimer;
 
   int _sessionCompleted = 0;
 
-  /// Call once during app initialization after DB & DI setup.
-  Future<void> start() async {
-    if (_started || _disposed) {
+  @override
+  Future<void> initialize() {
+    if (_disposed) {
+      return Future.value();
+    }
+
+    return _initFuture ??= _doInitialize();
+  }
+
+  Future<void> _doInitialize() async {
+    // On fresh process start, any job still marked `running` was interrupted by
+    // an app kill/crash and must be recovered immediately before draining.
+    await _writeRepo.recoverStaleJobs(staleThreshold: Duration.zero);
+
+    if (_disposed) {
       return;
     }
 
-    _started = true;
+    _pollTimer = Timer.periodic(pollInterval, (_) async {
+      if (_disposed || _isSweeping) {
+        return;
+      }
 
-    await _writeRepo.recoverStaleJobs(staleThreshold: staleLeaseThreshold);
+      _isSweeping = true;
+      try {
+        if (!_isProcessing) {
+          await _writeRepo.recoverStaleJobs(
+            staleThreshold: staleLeaseThreshold,
+          );
+        }
 
-    _pollTimer = Timer.periodic(pollInterval, (_) => _drain());
+        if (!_disposed) {
+          unawaited(_drain());
+        }
+      } finally {
+        _isSweeping = false;
+      }
+    });
 
     unawaited(_drain());
   }
 
+  Future<void> triggerDrain() async {
+    await initialize();
+
+    if (_isProcessing) {
+      await _syncNotificationWithQueue();
+      return;
+    }
+
+    unawaited(_drain());
+  }
+
+  /// Re-evaluates notification state immediately (e.g., after external cancellation).
+  Future<void> syncNotifications() => _syncNotificationWithQueue();
+
+  @override
   Future<void> dispose() async {
     _disposed = true;
 
     _pollTimer?.cancel();
     _pollTimer = null;
+
+    _handler.dispose();
 
     await _notifications.dismiss();
   }
@@ -73,6 +125,8 @@ class LocalJobQueueRunner implements IJobDispatcher {
     int maxAttempts = 3,
     bool deduplicateActiveByItemKey = true,
   }) async {
+    await initialize();
+
     final jobId = await _writeRepo.enqueue(
       id: id,
       payload: payload,
@@ -83,6 +137,7 @@ class LocalJobQueueRunner implements IJobDispatcher {
       deduplicateActiveByItemKey: deduplicateActiveByItemKey,
     );
 
+    _notifyMainIsolate(jobId: jobId, itemKey: itemKey, groupKey: groupKey);
     unawaited(_drain());
 
     return jobId;
@@ -93,6 +148,8 @@ class LocalJobQueueRunner implements IJobDispatcher {
     if (requests.isEmpty) {
       return const [];
     }
+
+    await initialize();
 
     final ids = <String>[];
 
@@ -108,6 +165,11 @@ class LocalJobQueueRunner implements IJobDispatcher {
       );
 
       ids.add(jobId);
+      _notifyMainIsolate(
+        jobId: jobId,
+        itemKey: req.itemKey,
+        groupKey: req.groupKey,
+      );
     }
 
     unawaited(_drain());
@@ -119,6 +181,7 @@ class LocalJobQueueRunner implements IJobDispatcher {
   Future<int> cancelGroup(String groupKey) async {
     final cancelled = await _writeRepo.cancelByGroupKey(groupKey);
 
+    _notifyMainIsolate(groupKey: groupKey);
     await _syncNotificationWithQueue();
 
     return cancelled;
@@ -126,8 +189,12 @@ class LocalJobQueueRunner implements IJobDispatcher {
 
   @override
   Future<int> cancelItems(Iterable<String> itemKeys) async {
-    final cancelled = await _writeRepo.cancelByItemKeys(itemKeys);
+    final keys = itemKeys.toList();
+    final cancelled = await _writeRepo.cancelByItemKeys(keys);
 
+    for (final key in keys) {
+      _notifyMainIsolate(itemKey: key);
+    }
     await _syncNotificationWithQueue();
 
     return cancelled;
@@ -135,16 +202,40 @@ class LocalJobQueueRunner implements IJobDispatcher {
 
   @override
   Future<bool> retryDeadJob(String jobId, {bool resetProgress = false}) async {
+    await initialize();
+
     final requeued = await _writeRepo.requeueDeadJob(
       jobId,
       resetProgress: resetProgress,
     );
 
     if (requeued) {
+      _notifyMainIsolate(jobId: jobId, status: JobStatus.queued.name);
       unawaited(_drain());
     }
 
     return requeued;
+  }
+
+  void _notifyMainIsolate({
+    String? jobId,
+    String? itemKey,
+    String? groupKey,
+    String? status,
+    String? lastError,
+  }) {
+    try {
+      FlutterForegroundTask.sendDataToMain({
+        'type': 'job_updated',
+        'jobId': ?jobId,
+        'itemKey': ?itemKey,
+        'groupKey': ?groupKey,
+        'status': ?status,
+        'lastError': ?lastError,
+      });
+    } catch (_) {
+      // Safe no-op if running in the main isolate or before task port binds.
+    }
   }
 
   Future<void> _drain() async {
@@ -161,6 +252,15 @@ class LocalJobQueueRunner implements IJobDispatcher {
         if (job == null) {
           break;
         }
+
+        // Wake the UI isolate immediately when a job transitions to `running`,
+        // before warmUp() or vision prefill blocks for several seconds.
+        _notifyMainIsolate(
+          jobId: job.id,
+          itemKey: job.itemKey,
+          groupKey: job.groupKey,
+          status: JobStatus.running.name,
+        );
 
         final queuedRemaining = (await _readRepo.getByStatus(JobStatus.queued))
             .length;
@@ -189,31 +289,72 @@ class LocalJobQueueRunner implements IJobDispatcher {
               latestElapsedMs = elapsedMs;
             }
 
-            return _writeRepo.checkpoint(
+            final stillActive = await _writeRepo.checkpoint(
               jobId: job.id,
               partialOutput: partialOutput,
               elapsedMs: elapsedMs,
             );
+
+            _notifyMainIsolate(
+              jobId: job.id,
+              itemKey: job.itemKey,
+              groupKey: job.groupKey,
+              status: stillActive
+                  ? JobStatus.running.name
+                  : JobStatus.cancelled.name,
+            );
+
+            if (stillActive) {
+              await _syncNotificationWithQueue();
+            }
+
+            return stillActive;
           },
         );
 
+        var terminalStatus = JobStatus.running;
+        String? terminalError;
+
         try {
-          await _handler.execute(job, context);
+          await _handler
+              .execute(job, context)
+              .timeout(
+                executionTimeout,
+                onTimeout: () => throw TimeoutException(
+                  'Job execution exceeded ${executionTimeout.inMinutes}-minute timeout',
+                  executionTimeout,
+                ),
+              );
           await _writeRepo.markSucceeded(
             job.id,
             finalOutput: latestPartial,
             elapsedMs: latestElapsedMs,
           );
+
+          terminalStatus = JobStatus.succeeded;
           _sessionCompleted++;
         } on JobCancelledException {
-          // Job was already marked `cancelled` externally; do nothing.
+          terminalStatus = JobStatus.cancelled;
         } catch (error) {
+          terminalError = error.toString();
+
           await _writeRepo.recordFailure(
             jobId: job.id,
-            errorMessage: error.toString(),
-            retryDelay: retryBackoff * job.attempts,
+            errorMessage: terminalError,
+            retryDelay: retryBackoff * (job.attempts + 1),
             partialOutput: latestPartial,
             elapsedMs: latestElapsedMs,
+          );
+
+          final updated = await _readRepo.getById(job.id);
+          terminalStatus = updated?.status ?? JobStatus.dead;
+        } finally {
+          _notifyMainIsolate(
+            jobId: job.id,
+            itemKey: job.itemKey,
+            groupKey: job.groupKey,
+            status: terminalStatus.name,
+            lastError: terminalError,
           );
         }
       }
@@ -221,10 +362,20 @@ class LocalJobQueueRunner implements IJobDispatcher {
       _isProcessing = false;
 
       await _syncNotificationWithQueue();
+
+      final queued = await _readRepo.getByStatus(JobStatus.queued);
+      final running = await _readRepo.getByStatus(JobStatus.running);
+      if (!_disposed && queued.isEmpty && running.isEmpty) {
+        await onQueueIdle?.call();
+      }
     }
   }
 
   Future<void> _syncNotificationWithQueue() async {
+    if (_disposed) {
+      return;
+    }
+
     final queued = await _readRepo.getByStatus(JobStatus.queued);
     final running = await _readRepo.getByStatus(JobStatus.running);
 
@@ -233,8 +384,6 @@ class LocalJobQueueRunner implements IJobDispatcher {
 
       await _notifications.dismiss();
     } else if (_isProcessing && running.isNotEmpty) {
-      // Mid-batch cancellation occurred while another job is still running:
-      // immediately shrink the notification denominator to match the DB.
       final current = _sessionCompleted + 1;
       final total = _sessionCompleted + running.length + queued.length;
 

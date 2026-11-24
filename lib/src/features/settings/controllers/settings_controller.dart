@@ -1,13 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'package:my_reviewer/src/shared/services/app_settings_service.dart';
 
-typedef WifiOnlyPreferenceReader = Future<bool> Function();
-typedef WifiOnlyPreferenceWriter = Future<void> Function(bool value);
-
+/// Controller managing user-configurable application settings.
 class SettingsController extends ChangeNotifier {
-  SettingsController({this._readWifiOnly, this._writeWifiOnly});
+  SettingsController({required this._settingsService});
 
-  final WifiOnlyPreferenceReader? _readWifiOnly;
-  final WifiOnlyPreferenceWriter? _writeWifiOnly;
+  final AppSettingsService _settingsService;
 
   bool _wifiOnly = true;
   bool _disposed = false;
@@ -15,10 +13,7 @@ class SettingsController extends ChangeNotifier {
   bool get wifiOnly => _wifiOnly;
 
   Future<void> initialize() async {
-    final saved = await _readWifiOnly?.call();
-    if (saved != null) {
-      _wifiOnly = saved;
-    }
+    _wifiOnly = await _settingsService.isWifiOnlyDownloads();
 
     if (!_disposed) {
       notifyListeners();
@@ -35,7 +30,7 @@ class SettingsController extends ChangeNotifier {
       notifyListeners();
     }
 
-    await _writeWifiOnly?.call(value);
+    await _settingsService.setWifiOnlyDownloads(value);
   }
 
   @override

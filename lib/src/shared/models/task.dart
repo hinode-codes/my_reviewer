@@ -13,6 +13,9 @@ class TaskProgress {
 
   const TaskProgress.finishing() : this(stage: TaskStage.finishing);
 
+  const TaskProgress.processing({required this.current, required this.total})
+    : stage = TaskStage.processing;
+
   final TaskStage stage;
   final int current;
   final int total;

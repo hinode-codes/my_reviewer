@@ -1,24 +1,24 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:my_reviewer/src/shared/constants/ui_constants.dart';
 import 'package:my_reviewer/src/shared/controllers/ai_model_selector_controller.dart';
 import 'package:my_reviewer/src/shared/i18n/gen/strings.g.dart';
 import 'package:my_reviewer/src/shared/models/ai_model.dart';
 import 'package:my_reviewer/src/shared/models/confirmation.dart';
 import 'package:my_reviewer/src/shared/models/task.dart';
-import 'package:my_reviewer/src/shared/services/ai_models/ai_model_provisioner.dart';
 import 'package:my_reviewer/src/shared/ui/dialogs/confirmation_dialog.dart';
+import 'package:my_reviewer/src/shared/ui/dialogs/info_dialog.dart';
 import 'package:my_reviewer/src/shared/ui/dialogs/task_dialog.dart';
+import 'package:my_reviewer/src/shared/utils/strings.dart';
 import 'package:provider/provider.dart';
 import 'package:settings_ui/settings_ui.dart';
 
+/// Settings section allowing users to choose an on-device AI transcription
+/// model and manage its download, verification, integration, or cleanup.
 class AiModelSelectorSection extends AbstractSettingsSection {
-  const AiModelSelectorSection({
-    super.key,
-    required this.taskKind,
-    this.extraTiles = const [],
-  });
+  const AiModelSelectorSection({super.key, required this.taskKind});
 
+  /// Execution context passed to [TaskDialog.run] during model provisioning.
   final TaskKind taskKind;
-  final List<AbstractSettingsTile> extraTiles;
 
   @override
   Widget build(BuildContext context) {
@@ -26,114 +26,80 @@ class AiModelSelectorSection extends AbstractSettingsSection {
     final selected = controller.selectedModel;
     final status = controller.selectedStatus;
     final m = t.settings.main.model;
+    final isNotInstalled = status.phase == AiModelInstallPhase.notInstalled;
 
     return SettingsSection(
       title: Text(m.title),
       tiles: [
-        SettingsTile(
+        SettingsTile.navigation(
           leading: const Icon(Icons.memory_outlined),
           title: Text(m.title),
-          description: Text(
-            status.phase == AiModelInstallPhase.ready
-                ? '${selected.subtitle} • ${m.status.ready}'
-                : selected.subtitle,
+          titleDescription: Text(
+            m.subtitle(context: status.phase, subtitle: selected.subtitle),
           ),
-          trailing: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: controller.selectedModelId,
-              items: [
-                for (final model in controller.models)
-                  DropdownMenuItem<String>(
-                    value: model.id,
-                    child: _ModelDropdownOption(
-                      spec: model,
-                      status: controller.statusFor(model),
-                    ),
-                  ),
-              ],
-              onChanged: (nextId) async {
-                if (nextId == null) {
-                  return;
-                }
-
-                final switchedImmediately = await controller.selectModel(
-                  nextId,
-                );
-
-                if (switchedImmediately || !context.mounted) {
-                  return;
-                }
-
-                await _confirmAndProvision(context, controller);
-              },
-            ),
-          ),
+          value: Text(selected.displayName),
+          onPressed: (ctx) => _openModelPicker(ctx, controller),
         ),
-        if (status.phase.needsRecovery ||
-            status.phase == AiModelInstallPhase.notInstalled)
+        if (status.phase.needsRecovery || isNotInstalled)
           CustomSettingsTile(
             child: _ModelStatusBanner(
               status: status,
               onPrimaryAction: () => _confirmAndProvision(context, controller),
-              onDiscardAction: status.phase == AiModelInstallPhase.notInstalled
+              onDiscardAction: isNotInstalled
                   ? null
                   : () => _confirmAndDiscard(context, controller),
               onSizeInfoAction: () => _showSizeInfoDialog(context, selected),
             ),
           ),
-        ...extraTiles,
       ],
     );
   }
 
+  /// Opens a modal bottom sheet listing all registered [AiModelSpec] options.
+  ///
+  /// Switches immediately if the chosen model is already ready; otherwise,
+  /// prompts the user to download or complete setup.
+  Future<void> _openModelPicker(
+    BuildContext context,
+    AiModelSelectorController controller,
+  ) async {
+    final nextId = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => _ModelPickerSheet(controller: controller),
+    );
+
+    if (nextId == null || !context.mounted) return;
+
+    final switchedImmediately = await controller.selectModel(nextId);
+    if (switchedImmediately || !context.mounted) return;
+
+    await _confirmAndProvision(context, controller);
+  }
+
+  /// Confirms model download or recovery with the user and runs provisioning
+  /// inside a [TaskDialog].
   Future<void> _confirmAndProvision(
     BuildContext context,
     AiModelSelectorController controller,
   ) async {
     final status = controller.selectedStatus;
     final m = t.settings.main.model;
-
-    final (title, message, confirmLabel) = switch (status.phase) {
-      AiModelInstallPhase.notInstalled => (
-        m.dialogs.required.title,
-        '${m.dialogs.required.message}\n\n'
-            '${m.size.label(size: _formatSize(status.spec.totalBytes))}',
-        m.actions.download,
-      ),
-      AiModelInstallPhase.partialDownload => (
-        m.alerts.partial.title,
-        m.alerts.partial.message,
-        m.actions.resume,
-      ),
-      AiModelInstallPhase.downloadedUnverified => (
-        m.alerts.unverified.title,
-        m.alerts.unverified.message,
-        m.actions.completeSetup,
-      ),
-      AiModelInstallPhase.verifiedUnintegrated => (
-        m.alerts.unintegrated.title,
-        m.alerts.unintegrated.message,
-        m.actions.completeSetup,
-      ),
-      AiModelInstallPhase.failed => (
-        m.alerts.failed.title,
-        status.errorMessage ?? m.alerts.failed.message,
-        m.actions.retry,
-      ),
-      AiModelInstallPhase.ready => ('', '', ''),
-    };
+    final setup = m.dialogs.setup;
 
     final choice = await ConfirmationDialog.show(
       context,
-      title: title,
-      message: message,
-      confirmLabel: confirmLabel,
+      title: setup.title(context: status.phase),
+      message: setup.message(
+        context: status.phase,
+        size: formatByteSize(status.spec.totalBytes, minUnitIndex: 2),
+        error: status.errorMessage ?? t.common.status.failed,
+      ),
+      confirmLabel: setup.confirmLabel(context: status.phase),
       cancelLabel: m.actions.cancel,
     );
 
-    if (choice != ConfirmChoice.confirm || !context.mounted) {
-      return;
-    }
+    if (choice != ConfirmChoice.confirm || !context.mounted) return;
 
     await TaskDialog.run(
       context,
@@ -141,11 +107,10 @@ class AiModelSelectorSection extends AbstractSettingsSection {
       kind: taskKind,
       messages: TaskDialogMessages(
         preparing: m.status.preparing,
-        processing: (current, total) => switch (controller.provisionPhase) {
-          ProvisionPhase.downloading => m.status.downloading(progress: current),
-          ProvisionPhase.verifying => m.status.verifying,
-          ProvisionPhase.integrating => m.status.integrating,
-        },
+        processing: (current, _) => m.status.processing(
+          context: controller.provisionPhase,
+          progress: current,
+        ),
         finishing: m.status.finishing,
         succeeded: m.status.done,
         failed: m.status.failed,
@@ -153,17 +118,19 @@ class AiModelSelectorSection extends AbstractSettingsSection {
     );
   }
 
+  /// Confirms and deletes partial or corrupted files for the selected model.
   Future<void> _confirmAndDiscard(
     BuildContext context,
     AiModelSelectorController controller,
   ) async {
-    final spec = controller.selectedModel;
     final m = t.settings.main.model;
 
     final choice = await ConfirmationDialog.show(
       context,
       title: m.dialogs.discard.title,
-      message: m.dialogs.discard.message(name: spec.displayName),
+      message: m.dialogs.discard.message(
+        name: controller.selectedModel.displayName,
+      ),
       confirmLabel: m.actions.discard,
       cancelLabel: m.actions.cancel,
       tone: ConfirmTone.destructive,
@@ -174,67 +141,89 @@ class AiModelSelectorSection extends AbstractSettingsSection {
     }
   }
 
+  /// Displays total download size and artifact count for [spec].
   Future<void> _showSizeInfoDialog(
     BuildContext context,
     AiModelSpec spec,
   ) async {
     final m = t.settings.main.model;
-    final totalFormatted = _formatSize(spec.totalBytes);
 
-    await ConfirmationDialog.show(
+    await InfoDialog.show(
       context,
       title: m.dialogs.size.title,
-      message:
-          '${m.dialogs.size.total(size: totalFormatted)}\n'
-          '${m.dialogs.size.fileCount(n: spec.artifacts.length)}',
-      confirmLabel: t.common.actions.done,
-      cancelLabel: m.actions.cancel,
+      message: m.dialogs.size.message(
+        size: formatByteSize(spec.totalBytes, minUnitIndex: 2),
+        n: spec.artifacts.length,
+      ),
+      closeLabel: t.common.actions.done,
     );
   }
 }
 
-class _ModelDropdownOption extends StatelessWidget {
-  const _ModelDropdownOption({required this.spec, required this.status});
+/// Bottom-sheet list allowing selection among available [AiModelSpec] entries.
+class _ModelPickerSheet extends StatelessWidget {
+  const _ModelPickerSheet({required this.controller});
 
-  final AiModelSpec spec;
-  final AiModelStatus status;
+  final AiModelSelectorController controller;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
-    final icon = switch (status.phase) {
-      AiModelInstallPhase.ready => Icon(
-        Icons.check_circle_outline,
-        size: 16,
-        color: colorScheme.primary,
-      ),
-      AiModelInstallPhase.partialDownload ||
-      AiModelInstallPhase.downloadedUnverified ||
-      AiModelInstallPhase.verifiedUnintegrated => Icon(
-        Icons.pending_outlined,
-        size: 16,
-        color: colorScheme.tertiary,
-      ),
-      AiModelInstallPhase.failed => Icon(
-        Icons.error_outline,
-        size: 16,
-        color: colorScheme.error,
-      ),
-      AiModelInstallPhase.notInstalled => Icon(
-        Icons.cloud_download_outlined,
-        size: 16,
-        color: colorScheme.onSurfaceVariant,
-      ),
-    };
+    return SafeArea(
+      child: ListView.builder(
+        shrinkWrap: true,
+        itemCount: controller.models.length,
+        itemBuilder: (sheetContext, index) {
+          final model = controller.models[index];
+          final isSelected = model.id == controller.selectedModelId;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [icon, const SizedBox(width: 8), Text(spec.displayName)],
+          return ListTile(
+            leading: _ModelStatusIcon(phase: controller.statusFor(model).phase),
+            title: Text(model.displayName),
+            subtitle: Text(model.subtitle),
+            trailing: isSelected
+                ? Icon(Icons.check, color: primaryColor)
+                : null,
+            onTap: () => Navigator.of(sheetContext).pop(model.id),
+          );
+        },
+      ),
     );
   }
 }
 
+/// Leading icon reflecting a model's [AiModelInstallPhase] in the picker sheet.
+class _ModelStatusIcon extends StatelessWidget {
+  const _ModelStatusIcon({required this.phase});
+
+  final AiModelInstallPhase phase;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    final (icon, color) = switch (phase) {
+      AiModelInstallPhase.ready => (Icons.check_circle_outline, colors.primary),
+      AiModelInstallPhase.partialDownload ||
+      AiModelInstallPhase.downloadedUnverified ||
+      AiModelInstallPhase.verifiedUnintegrated => (
+        Icons.pending_outlined,
+        colors.tertiary,
+      ),
+      AiModelInstallPhase.failed => (Icons.error_outline, colors.error),
+      AiModelInstallPhase.notInstalled => (
+        Icons.cloud_download_outlined,
+        colors.onSurfaceVariant,
+      ),
+    };
+
+    return Icon(icon, color: color);
+  }
+}
+
+/// Inline status card displaying setup prompts, recovery actions, and size info
+/// whenever the selected model is not yet [AiModelInstallPhase.ready].
 class _ModelStatusBanner extends StatelessWidget {
   const _ModelStatusBanner({
     required this.status,
@@ -251,101 +240,89 @@ class _ModelStatusBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colors = theme.colorScheme;
     final m = t.settings.main.model;
+    final banner = m.alerts.banner;
     final isError = status.phase == AiModelInstallPhase.failed;
 
-    final backgroundColor = isError
-        ? colorScheme.errorContainer.withValues(alpha: 0.45)
-        : colorScheme.secondaryContainer.withValues(alpha: 0.55);
-    final foregroundColor = isError
-        ? colorScheme.onErrorContainer
-        : colorScheme.onSecondaryContainer;
+    final (bgColor, fgColor) = isError
+        ? (
+            colors.errorContainer.withValues(alpha: 0.45),
+            colors.onErrorContainer,
+          )
+        : (
+            colors.secondaryContainer.withValues(alpha: 0.55),
+            colors.onSecondaryContainer,
+          );
 
-    final (icon, headline, body, actionLabel) = switch (status.phase) {
-      AiModelInstallPhase.notInstalled => (
-        Icons.download_for_offline_outlined,
-        m.alerts.missing.title,
-        m.alerts.missing.message,
-        m.actions.download,
-      ),
-      AiModelInstallPhase.partialDownload => (
-        Icons.downloading_outlined,
-        m.alerts.partial.title,
-        m.alerts.partial.message,
-        m.actions.resume,
-      ),
-      AiModelInstallPhase.downloadedUnverified => (
-        Icons.verified_user_outlined,
-        m.alerts.unverified.title,
-        m.alerts.unverified.message,
-        m.actions.completeSetup,
-      ),
-      AiModelInstallPhase.verifiedUnintegrated => (
-        Icons.extension_outlined,
-        m.alerts.unintegrated.title,
-        m.alerts.unintegrated.message,
-        m.actions.completeSetup,
-      ),
-      AiModelInstallPhase.failed => (
-        Icons.warning_amber_rounded,
-        m.alerts.failed.title,
-        status.errorMessage ?? m.alerts.failed.message,
-        m.actions.retry,
-      ),
-      AiModelInstallPhase.ready => (Icons.check_circle_outline, '', '', ''),
+    final icon = switch (status.phase) {
+      AiModelInstallPhase.notInstalled => Icons.download_for_offline_outlined,
+      AiModelInstallPhase.partialDownload => Icons.downloading_outlined,
+      AiModelInstallPhase.downloadedUnverified => Icons.verified_user_outlined,
+      AiModelInstallPhase.verifiedUnintegrated => Icons.extension_outlined,
+      AiModelInstallPhase.failed => Icons.warning_amber_rounded,
+      AiModelInstallPhase.ready => Icons.check_circle_outline,
     };
 
-    final sizeText = status.spec.totalBytes > 0
-        ? m.size.label(size: _formatSize(status.spec.totalBytes))
+    final totalBytes = status.spec.totalBytes;
+    final sizeText = totalBytes > 0
+        ? m.size.label(size: formatByteSize(totalBytes, minUnitIndex: 2))
         : m.size.unavailable;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        AppSpacing.md,
+      ),
       child: Material(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 20, color: foregroundColor),
-                  const SizedBox(width: 8),
+                  Icon(icon, size: AppSizes.icon, color: fgColor),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      headline,
+                      banner.title(context: status.phase),
                       style: theme.textTheme.titleSmall?.copyWith(
-                        color: foregroundColor,
+                        color: fgColor,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSpacing.xs),
               Text(
-                body,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: foregroundColor,
+                banner.message(
+                  context: status.phase,
+                  error: status.errorMessage ?? m.alerts.failed.message,
                 ),
+                style: theme.textTheme.bodySmall?.copyWith(color: fgColor),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xs),
               Row(
                 children: [
                   Text(
                     sizeText,
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: foregroundColor.withValues(alpha: 0.85),
+                      color: fgColor.withValues(alpha: AppOpacity.scrim),
                     ),
                   ),
                   if (onSizeInfoAction != null) ...[
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSpacing.xs),
                     TextButton(
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                        ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
@@ -355,7 +332,7 @@ class _ModelStatusBanner extends StatelessWidget {
                   ],
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -364,11 +341,11 @@ class _ModelStatusBanner extends StatelessWidget {
                       onPressed: onDiscardAction,
                       child: Text(m.actions.discard),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                   ],
                   FilledButton.tonal(
                     onPressed: onPrimaryAction,
-                    child: Text(actionLabel),
+                    child: Text(banner.actionLabel(context: status.phase)),
                   ),
                 ],
               ),
@@ -378,15 +355,4 @@ class _ModelStatusBanner extends StatelessWidget {
       ),
     );
   }
-}
-
-String _formatSize(int bytes) {
-  if (bytes <= 0) {
-    return '0 MB';
-  }
-  final mb = bytes / (1024 * 1024);
-  if (mb >= 1024) {
-    return '${(mb / 1024).toStringAsFixed(2)} GB';
-  }
-  return '${mb.toStringAsFixed(0)} MB';
 }

@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 1
-/// Strings: 154
+/// Strings: 201
 ///
-/// Built on 2026-11-23 at 04:25 UTC
+/// Built on 2026-11-24 at 02:42 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint, unused_import
@@ -14,6 +14,8 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
+import 'package:my_reviewer/src/shared/models/ai_model.dart';
+import 'package:my_reviewer/src/shared/services/ai_models/ai_model_provisioner.dart';
 import 'package:slang/generated.dart';
 import 'package:slang_flutter/slang_flutter.dart';
 export 'package:slang_flutter/slang_flutter.dart';

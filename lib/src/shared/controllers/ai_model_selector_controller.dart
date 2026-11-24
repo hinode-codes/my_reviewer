@@ -3,31 +3,33 @@ import 'package:my_reviewer/src/shared/controllers/task_controller.dart';
 import 'package:my_reviewer/src/shared/models/ai_model.dart';
 import 'package:my_reviewer/src/shared/models/task.dart';
 import 'package:my_reviewer/src/shared/services/ai_models/ai_model_provisioner.dart';
+import 'package:my_reviewer/src/shared/services/app_settings_service.dart';
 
-typedef ModelIdReader = Future<String?> Function();
-typedef ModelIdWriter = Future<void> Function(String modelId);
-typedef AuthTokenReader = Future<String?> Function();
-typedef WifiOnlyReader = Future<bool> Function();
-
+/// Coordinates selection, inspection, provisioning, and cleanup of on-device
+/// AI models.
+///
+/// Tracks two model pointers:
+/// - [activeModelId]: The last model successfully provisioned and persisted in
+///   [AppSettingsService].
+/// - [selectedModelId]: The model currently focused in the UI, which may be in
+///   an unready or recoverable state prior to provisioning.
 class AiModelSelectorController extends ChangeNotifier {
+  /// Creates a selector controller for the given non-empty [models] catalog.
   AiModelSelectorController({
     required this.models,
     required this._provisioner,
-    required this._readSelectedModelId,
-    required this._writeSelectedModelId,
-    this._readAuthToken,
-    this._readWifiOnly,
+    required this._settingsService,
   }) : assert(models.isNotEmpty) {
     provisionTask = TaskController<void>(_runProvision);
   }
 
+  /// Catalog of available AI models that the user can choose from.
   final List<AiModelSpec> models;
   final AiModelProvisioner _provisioner;
-  final ModelIdReader _readSelectedModelId;
-  final ModelIdWriter _writeSelectedModelId;
-  final AuthTokenReader? _readAuthToken;
-  final WifiOnlyReader? _readWifiOnly;
+  final AppSettingsService _settingsService;
 
+  /// Background task controller driving model download, verification, and
+  /// runtime integration with progress reporting.
   late final TaskController<void> provisionTask;
 
   final Map<String, AiModelStatus> _statusesById = {};
@@ -39,15 +41,24 @@ class AiModelSelectorController extends ChangeNotifier {
   bool _initialized = false;
   bool _disposed = false;
 
+  /// ID of the currently active, ready-to-use model.
   String get activeModelId => _activeModelId;
+
+  /// ID of the model currently selected in the UI (may require setup or
+  /// recovery before becoming [activeModelId]).
   String get selectedModelId => _targetModelId;
+
+  /// Current pipeline stage of an active [provisionTask] execution.
   ProvisionPhase get provisionPhase => _provisionPhase;
 
+  /// Specification for [selectedModelId], falling back to [models.first] if
+  /// not found.
   AiModelSpec get selectedModel => models.firstWhere(
     (m) => m.id == _targetModelId,
     orElse: () => models.first,
   );
 
+  /// Latest inspected installation status for [selectedModel].
   AiModelStatus get selectedStatus =>
       _statusesById[_targetModelId] ??
       AiModelStatus(
@@ -55,12 +66,16 @@ class AiModelSelectorController extends ChangeNotifier {
         phase: AiModelInstallPhase.notInstalled,
       );
 
+  /// Returns the cached [AiModelStatus] for [spec], defaulting to
+  /// [AiModelInstallPhase.notInstalled] before [initialize] completes.
   AiModelStatus statusFor(AiModelSpec spec) =>
       _statusesById[spec.id] ??
       AiModelStatus(spec: spec, phase: AiModelInstallPhase.notInstalled);
 
+  /// Restores the persisted active model ID from [AppSettingsService] and
+  /// inspects on-disk statuses for all registered [models].
   Future<void> initialize() async {
-    final savedId = await _readSelectedModelId();
+    final savedId = await _settingsService.getSelectedOcrModelId();
 
     if (savedId != null && models.any((m) => m.id == savedId)) {
       _activeModelId = savedId;
@@ -75,6 +90,8 @@ class AiModelSelectorController extends ChangeNotifier {
     }
   }
 
+  /// Re-inspects on-disk artifacts for every model in [models] and updates
+  /// cached statuses.
   Future<void> refreshStatuses() async {
     for (final spec in models) {
       _statusesById[spec.id] = await _provisioner.inspect(
@@ -88,11 +105,12 @@ class AiModelSelectorController extends ChangeNotifier {
     }
   }
 
-  /// Selects [modelId] in the dropdown.
-  /// - If already `ready`: re-runs lightweight `integrate` (ensures EdgeAI active
-  ///   model points to this spec), persists [modelId], and returns `true`.
-  /// - Otherwise: updates dropdown focus so the recovery/download banner appears
-  ///   below the tile, and returns `false` so the UI triggers `TaskDialog`.
+  /// Focuses [modelId] and switches immediately if its files are already ready.
+  ///
+  /// - Returns `true` when [modelId] is [AiModelInstallPhase.ready], re-running
+  ///   lightweight runtime integration and persisting the selection.
+  /// - Returns `false` if [modelId] is unknown or requires downloading,
+  ///   verification, or recovery, signaling the caller to prompt the user.
   Future<bool> selectModel(String modelId) async {
     if (!models.any((m) => m.id == modelId)) {
       return false;
@@ -107,26 +125,34 @@ class AiModelSelectorController extends ChangeNotifier {
 
     if (status.phase == AiModelInstallPhase.ready) {
       await _provisioner.provision(selectedModel);
+
       _activeModelId = modelId;
-      await _writeSelectedModelId(modelId);
+
+      await _settingsService.setSelectedOcrModelId(modelId);
+
       if (!_disposed) {
         notifyListeners();
       }
+
       return true;
     }
 
     if (!_disposed) {
       notifyListeners();
     }
+
     return false;
   }
 
+  /// Deletes partial or corrupted files for [selectedModel], clears its last
+  /// error, and reverts [selectedModelId] back to [activeModelId].
   Future<void> discardIncomplete() async {
     final spec = selectedModel;
 
     await _provisioner.deleteModelFiles(spec);
 
     _errorsById.remove(spec.id);
+
     _statusesById[spec.id] = await _provisioner.inspect(spec);
     _targetModelId = _activeModelId;
 
@@ -135,6 +161,8 @@ class AiModelSelectorController extends ChangeNotifier {
     }
   }
 
+  /// Provisions [selectedModel] across download, verification, and integration
+  /// stages, persisting [activeModelId] upon success.
   Future<void> _runProvision(MyReviewerTaskProgressCallback onProgress) async {
     final spec = selectedModel;
 
@@ -142,9 +170,9 @@ class AiModelSelectorController extends ChangeNotifier {
 
     try {
       final token = spec.requiresAuthToken
-          ? await _readAuthToken?.call()
+          ? await _settingsService.getHuggingFaceToken()
           : null;
-      final wifiOnly = await _readWifiOnly?.call() ?? false;
+      final wifiOnly = await _settingsService.isWifiOnlyDownloads();
 
       await _provisioner.provision(
         spec,
@@ -160,7 +188,8 @@ class AiModelSelectorController extends ChangeNotifier {
       );
 
       _activeModelId = spec.id;
-      await _writeSelectedModelId(spec.id);
+
+      await _settingsService.setSelectedOcrModelId(spec.id);
     } catch (err) {
       _errorsById[spec.id] = err.toString();
       rethrow;
@@ -179,6 +208,7 @@ class AiModelSelectorController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+
     provisionTask.dispose();
     super.dispose();
   }

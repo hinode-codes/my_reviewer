@@ -1,5 +1,6 @@
 import "dart:io";
 
+import "package:flutter/widgets.dart";
 import "package:my_reviewer/src/shared/models/storage_root.dart";
 import "package:path/path.dart" as p;
 import "package:path_provider/path_provider.dart";
@@ -93,8 +94,11 @@ class DiskFileStorageService implements IFileStorageService {
     return dir;
   }
 
-  Future<FileSystemEntity?> _entityAt(String path) async =>
-      _entityOfType(await FileSystemEntity.type(path), path);
+  Future<FileSystemEntity?> _entityAt(String path) async {
+    final typ = await FileSystemEntity.type(path);
+
+    return _entityOfType(typ, path);
+  }
 
   FileSystemEntity? _entityAtSync(String path) =>
       _entityOfType(FileSystemEntity.typeSync(path), path);
@@ -149,6 +153,8 @@ class DiskFileStorageService implements IFileStorageService {
   @override
   Future<void> rename(String from, String to) async {
     final entity = await _entityAt(from);
+
+    debugPrint("Renaming $from to $to, entity: $entity");
 
     if (entity == null) {
       throw FileSystemException("Nothing to rename", from);

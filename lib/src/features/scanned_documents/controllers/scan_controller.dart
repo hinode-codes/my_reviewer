@@ -2,15 +2,15 @@ import 'package:material_ui/material_ui.dart';
 import 'package:my_reviewer/src/features/scanned_documents/controllers/scan_preview_controller.dart';
 import 'package:my_reviewer/src/features/scanned_documents/models/scan_session_snapshot.dart';
 import 'package:my_reviewer/src/features/scanned_documents/models/scanner.dart';
-import 'package:my_reviewer/src/features/scanned_documents/repositories/i_scanned_document_write_repository.dart';
 import 'package:my_reviewer/src/features/scanned_documents/services/i_document_scanner_service.dart';
+import 'package:my_reviewer/src/features/scanned_documents/use_cases/save_and_transcribe_documents_use_case.dart';
 import 'package:my_reviewer/src/shared/controllers/task_controller.dart';
 import 'package:my_reviewer/src/shared/models/task.dart';
 import 'package:my_reviewer/src/shared/services/storage/i_file_storage_service.dart';
 
 class ScanController extends ChangeNotifier {
   ScanController({
-    required this.writeRepository,
+    required this.saveScannedGroupUseCase,
     required IDocumentScannerService scanner,
     required IFileStorageService storageService,
   }) : previewController = ScanPreviewController(
@@ -21,7 +21,7 @@ class ScanController extends ChangeNotifier {
     saveTask = TaskController<void>(_save);
   }
 
-  final IScannedDocumentWriteRepository writeRepository;
+  final SaveScannedGroupUseCase saveScannedGroupUseCase;
   final ScanPreviewController previewController;
   late final TaskController<void> saveTask;
 
@@ -65,12 +65,11 @@ class ScanController extends ChangeNotifier {
       return;
     }
 
-    await writeRepository.saveScannedDocuments(
+    await saveScannedGroupUseCase((
       groupId: snapshot.groupId,
       groupName: snapshot.groupName,
       pages: pendingPages,
-      onProgress: onProgress,
-    );
+    ), onProgress: onProgress);
 
     if (_disposed) {
       return;

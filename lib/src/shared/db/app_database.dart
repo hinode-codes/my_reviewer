@@ -55,6 +55,8 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration {
     return MigrationStrategy(
       beforeOpen: (details) async {
+        await customStatement('PRAGMA journal_mode = WAL;');
+        await customStatement('PRAGMA busy_timeout = 5000;');
         await customStatement("PRAGMA foreign_keys = ON");
       },
     );

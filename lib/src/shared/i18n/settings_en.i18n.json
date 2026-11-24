@@ -4,11 +4,19 @@
     "model": {
       "title": "Transcription Model",
       "description": "Choose the model used to transcribe your scanned pages on this device.",
+      "subtitle(context=AiModelInstallPhase, subtitle=String)": {
+        "ready": "{subtitle} • @:settings.main.model.status.ready",
+        "notInstalled": "This model is not downloaded.",
+        "partialDownload": "This model is partially downloaded.",
+        "downloadedUnverified": "This model has not been verified yet.",
+        "verifiedUnintegrated": "This model is verified but not integrated with the on-device engine.",
+        "failed": "Something went wrong while preparing this model."
+      },
       "actions": {
         "download": "Download",
         "resume": "Resume",
-        "retry": "Try again",
-        "cancel": "Cancel",
+        "retry": "@:common.actions.retry",
+        "cancel": "@:common.actions.cancel",
         "completeSetup": "Complete setup",
         "discard": "Discard"
       },
@@ -21,9 +29,33 @@
         "integrating": "Integrating model with on-device engine...",
         "finishing": "Finalizing setup...",
         "done": "Model ready to use",
-        "failed": "Model setup failed"
+        "failed": "Model setup failed",
+        "processing(context=ProvisionPhase, progress=int)": {
+          "downloading": "@:settings.main.model.status.downloading",
+          "verifying": "@:settings.main.model.status.verifying",
+          "integrating": "@:settings.main.model.status.integrating"
+        }
       },
       "alerts": {
+        "banner": {
+          "title(context=AiModelInstallPhase)": {
+            "notInstalled": "@:settings.main.model.alerts.missing.title",
+            "partialDownload": "@:settings.main.model.alerts.partial.title",
+            "downloadedUnverified": "@:settings.main.model.alerts.unverified.title",
+            "verifiedUnintegrated": "@:settings.main.model.alerts.unintegrated.title",
+            "failed": "@:settings.main.model.alerts.failed.title",
+            "ready": ""
+          },
+          "message(context=AiModelInstallPhase, error=String)": {
+            "notInstalled": "@:settings.main.model.alerts.missing.message",
+            "partialDownload": "@:settings.main.model.alerts.partial.message",
+            "downloadedUnverified": "@:settings.main.model.alerts.unverified.message",
+            "verifiedUnintegrated": "@:settings.main.model.alerts.unintegrated.message",
+            "failed": "{error}",
+            "ready": ""
+          },
+          "actionLabel(context=AiModelInstallPhase)": "@:settings.main.model.dialogs.setup.confirmLabel"
+        },
         "missing": {
           "title": "Model not downloaded",
           "message": "Download this model to transcribe your pages. It's a one-time download."
@@ -61,6 +93,32 @@
         }
       },
       "dialogs": {
+        "setup": {
+          "title(context=AiModelInstallPhase)": {
+            "notInstalled": "@:settings.main.model.dialogs.required.title",
+            "partialDownload": "@:settings.main.model.alerts.partial.title",
+            "downloadedUnverified": "@:settings.main.model.alerts.unverified.title",
+            "verifiedUnintegrated": "@:settings.main.model.alerts.unintegrated.title",
+            "failed": "@:settings.main.model.alerts.failed.title",
+            "ready": ""
+          },
+          "message(context=AiModelInstallPhase, size=String, error=String)": {
+            "notInstalled": "@:settings.main.model.dialogs.required.message\n\n@:settings.main.model.size.label",
+            "partialDownload": "@:settings.main.model.alerts.partial.message",
+            "downloadedUnverified": "@:settings.main.model.alerts.unverified.message",
+            "verifiedUnintegrated": "@:settings.main.model.alerts.unintegrated.message",
+            "failed": "{error}",
+            "ready": ""
+          },
+          "confirmLabel(context=AiModelInstallPhase)": {
+            "notInstalled": "@:settings.main.model.actions.download",
+            "partialDownload": "@:settings.main.model.actions.resume",
+            "downloadedUnverified": "@:settings.main.model.actions.completeSetup",
+            "verifiedUnintegrated": "@:settings.main.model.actions.completeSetup",
+            "failed": "@:settings.main.model.actions.retry",
+            "ready": ""
+          }
+        },
         "discard": {
           "title": "Discard model files",
           "message": "Delete all downloaded and partial files for {name: String}?"
@@ -71,6 +129,7 @@
         },
         "size": {
           "title": "Download size",
+          "message(size=String, n=int)": "@:settings.main.model.dialogs.size.total\n@:settings.main.model.dialogs.size.fileCount",
           "total": "Total size: {size: String}",
           "fileCount": {
             "one": "{n} file",
@@ -89,11 +148,17 @@
     },
     "notifications": {
       "download": {
-        "title": "Downloading transcription model",
+        "title": "Downloading {name: String}",
+        "setupTitle": "Setting up {name: String}",
+        "complete": "{name: String} downloaded",
+        "paused": "Download paused: {name: String}",
+        "canceled": "Download canceled: {name: String}",
+        "failed": "Download failed: {name: String}",
         "status": {
           "downloading": "@:settings.main.model.status.downloading",
           "waitingForWifi": "@:settings.main.model.status.waitingForWifi",
           "verifying": "@:settings.main.model.status.verifying",
+          "integrating": "@:settings.main.model.status.integrating",
           "done": "Model ready to use",
           "failed": "Download failed"
         }

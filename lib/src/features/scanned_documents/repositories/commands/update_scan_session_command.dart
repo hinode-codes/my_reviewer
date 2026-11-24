@@ -41,6 +41,16 @@ class UpdateScanSessionCommand {
         row.id: row,
     };
 
+    // Hydrate existingDocuments with the authoritative relativePath from DB so
+    // stale UI snapshots never point at an already-renamed file on disk.
+    final freshExistingDocuments = [
+      for (final doc in existingDocuments)
+        if (storedRows[doc.id] case final stored?)
+          doc.copyWith(relativePath: stored.relativePath)
+        else
+          doc,
+    ];
+
     final oldFolderName = p.basename(group.relativePath);
     final folderName = await layout.claimFolderName(
       groupName,
@@ -56,7 +66,7 @@ class UpdateScanSessionCommand {
 
     final names = UniqueNameAllocator(const []);
     final existingPlanned = layout.planExistingPages(
-      existingDocuments,
+      freshExistingDocuments,
       groupName: groupName,
       folder: folder,
       names: names,
@@ -66,7 +76,7 @@ class UpdateScanSessionCommand {
       groupName: groupName,
       folder: folder,
       names: names,
-      indexOffset: existingDocuments.length,
+      indexOffset: freshExistingDocuments.length,
     );
 
     final renamedPages = [
@@ -76,7 +86,7 @@ class UpdateScanSessionCommand {
           page,
     ];
 
-    final keptIds = {for (final doc in existingDocuments) doc.id};
+    final keptIds = {for (final doc in freshExistingDocuments) doc.id};
     final removedRows = [
       for (final row in storedRows.values)
         if (!keptIds.contains(row.id)) row,
@@ -85,8 +95,12 @@ class UpdateScanSessionCommand {
     final removedFiles = [
       for (final row in removedRows)
         (
-          from: p.join(folder.relative, p.basename(row.relativePath)),
-          staging: p.join(folder.relative, '.renaming_${row.id}'),
+          from: storage.resolveAbsolutePath(
+            p.join(folder.relative, p.basename(row.relativePath)),
+          ),
+          staging: storage.resolveAbsolutePath(
+            p.join(folder.relative, '.renaming_${row.id}'),
+          ),
         ),
     ];
 
@@ -137,7 +151,10 @@ class UpdateScanSessionCommand {
         }
 
         if (folder.relative != group.relativePath) {
-          await journal.move(group.relativePath, folder.relative);
+          await journal.move(
+            storage.resolveAbsolutePath(group.relativePath),
+            folder.absolute,
+          );
         }
 
         for (final file in removedFiles) {
@@ -148,9 +165,13 @@ class UpdateScanSessionCommand {
         await journal.moveAllViaStaging([
           for (final page in renamedPages)
             (
-              from: p.join(folder.relative, page.currentFileNameWithExtension),
-              staging: p.join(folder.relative, '.renaming_${page.id}'),
-              to: page.relativePath,
+              from: storage.resolveAbsolutePath(
+                p.join(folder.relative, page.currentFileNameWithExtension),
+              ),
+              staging: storage.resolveAbsolutePath(
+                p.join(folder.relative, '.renaming_${page.id}'),
+              ),
+              to: storage.resolveAbsolutePath(page.relativePath),
             ),
         ], onEachFinalMove: counter.next);
 
@@ -163,7 +184,9 @@ class UpdateScanSessionCommand {
             fileNameWithoutExtension: page.fileNameWithoutExtension,
           );
 
-          journal.recordCreated(createdRelativePath);
+          final absolutePath = storage.resolveAbsolutePath(createdRelativePath);
+
+          journal.recordCreated(absolutePath);
         }
       });
 
@@ -172,8 +195,7 @@ class UpdateScanSessionCommand {
       // Staged removed files live in storage root (relative paths),
       // while temp scan captures live outside storage root (absolute paths).
       storage.deleteQuietlyBatch([
-        for (final file in removedFiles)
-          storage.resolveAbsolutePath(file.staging),
+        for (final file in removedFiles) file.staging,
         ...newPages.map((p) => p.sourceAbsolutePath),
       ]);
 

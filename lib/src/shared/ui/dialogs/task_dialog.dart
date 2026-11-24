@@ -79,7 +79,10 @@ class TaskDialog extends StatelessWidget {
             message: messages?.failed ?? t.common.status.failed,
           ),
           TaskStatus.idle || TaskStatus.running => _ProgressContent(
-            value: progress?.fraction,
+            value: switch (progress?.fraction) {
+              null || <= 0 => null,
+              final f => f,
+            },
             message: switch (progress?.stage) {
               null || TaskStage.preparing =>
                 messages?.preparing ?? t.common.status.preparing,

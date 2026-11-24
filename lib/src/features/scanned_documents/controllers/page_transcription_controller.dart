@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:my_reviewer/src/features/scanned_documents/models/ocr_job_payload.dart';
 import 'package:my_reviewer/src/features/scanned_documents/models/page_transcription_state.dart';
@@ -34,6 +35,8 @@ class PageTranscriptionController extends ChangeNotifier {
     _queuedSub = _jobReadRepo
         .watchByStatus(JobStatus.queued)
         .listen(_onQueuedJobsChanged);
+
+    FlutterForegroundTask.addTaskDataCallback(_onTaskData);
   }
 
   final String _groupId;
@@ -47,6 +50,7 @@ class PageTranscriptionController extends ChangeNotifier {
   final Set<String> _readingKeys = {};
 
   final Map<String, JobModel?> _latestJobByDocId = {};
+  final Map<String, String> _optimisticJobIdByDocId = {};
   final Map<String, StreamSubscription<JobModel?>> _jobSubsByDocId = {};
   final Map<String, int> _queuePositionsByJobId = {};
 
@@ -60,6 +64,8 @@ class PageTranscriptionController extends ChangeNotifier {
     final saved = _savedByDocId[doc.id];
 
     if (saved != null) {
+      _optimisticJobIdByDocId.remove(doc.id);
+
       final cacheKey = _cacheKeyFor(saved);
       final cachedMarkdown = _cleanedMarkdownByKey[cacheKey];
 
@@ -88,6 +94,26 @@ class PageTranscriptionController extends ChangeNotifier {
     _ensureWatchingJob(doc.id);
 
     final job = _latestJobByDocId[doc.id];
+    final optimisticJobId = _optimisticJobIdByDocId[doc.id];
+
+    // 3. Immediate optimistic state on click before DB/background isolate settles.
+    if (optimisticJobId != null &&
+        (job == null ||
+            job.status == JobStatus.dead ||
+            job.status == JobStatus.cancelled)) {
+      final hasActiveRun = _latestJobByDocId.values.any(
+        (j) => j?.status == JobStatus.running,
+      );
+
+      return hasActiveRun
+          ? TranscriptionQueued(jobId: optimisticJobId)
+          : TranscriptionInProgress(
+              jobId: optimisticJobId,
+              streamingMarkdown: '',
+              wordCount: 0,
+              elapsedMs: 0,
+            );
+    }
 
     if (job == null) {
       return const TranscriptionNotQueued();
@@ -105,6 +131,13 @@ class PageTranscriptionController extends ChangeNotifier {
         wordCount: countWords(partial),
         elapsedMs: job.elapsedMs,
       ),
+      JobStatus.queued
+          when job.lastError != null && job.lastError!.isNotEmpty =>
+        TranscriptionFailed(
+          jobId: job.id,
+          partialMarkdown: nonEmptyPartial,
+          errorMessage: job.lastError,
+        ),
       JobStatus.queued => TranscriptionQueued(
         jobId: job.id,
         queuePosition: _queuePositionsByJobId[job.id],
@@ -173,9 +206,82 @@ class PageTranscriptionController extends ChangeNotifier {
       if (_disposed) {
         return;
       }
+
       _latestJobByDocId[docId] = job;
+      if (job != null &&
+          (job.status == JobStatus.queued ||
+              job.status == JobStatus.running ||
+              job.status == JobStatus.succeeded ||
+              job.status == JobStatus.dead)) {
+        _optimisticJobIdByDocId.remove(docId);
+      }
+
       notifyListeners();
     });
+  }
+
+  void _onTaskData(Object data) {
+    if (_disposed || data is! Map) {
+      return;
+    }
+
+    debugPrint('[UI] taskData: $data');
+
+    if (data['type'] == 'job_updated') {
+      final itemKey = data['itemKey'] as String?;
+      final expectedStatus = data['status'] as String?;
+
+      if (itemKey != null) {
+        _ensureWatchingJob(itemKey);
+        unawaited(_refreshJobFromDb(itemKey, expectedStatus: expectedStatus));
+      } else {
+        for (final docId in _jobSubsByDocId.keys) {
+          unawaited(_refreshJobFromDb(docId));
+        }
+      }
+
+      unawaited(_refreshQueuedPositions());
+    }
+  }
+
+  Future<void> _refreshJobFromDb(String docId, {String? expectedStatus}) async {
+    var latest = await _jobReadRepo.watchLatestByItemKey(docId).first;
+
+    if (!_disposed &&
+        expectedStatus != null &&
+        latest != null &&
+        latest.status.name != expectedStatus) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      if (_disposed) {
+        return;
+      }
+      latest = await _jobReadRepo.watchLatestByItemKey(docId).first;
+    }
+
+    if (_disposed) {
+      return;
+    }
+
+    _latestJobByDocId[docId] = latest;
+    if (latest != null &&
+        (latest.status == JobStatus.queued ||
+            latest.status == JobStatus.running ||
+            latest.status == JobStatus.succeeded ||
+            latest.status == JobStatus.dead)) {
+      _optimisticJobIdByDocId.remove(docId);
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> _refreshQueuedPositions() async {
+    final queuedJobs = await _jobReadRepo.getByStatus(JobStatus.queued);
+
+    if (_disposed) {
+      return;
+    }
+
+    _onQueuedJobsChanged(queuedJobs);
   }
 
   void _onTranscriptionsChanged(
@@ -190,6 +296,7 @@ class PageTranscriptionController extends ChangeNotifier {
       ..addEntries(transcriptions.map((t) => MapEntry(t.docId, t)));
 
     for (final transcription in transcriptions) {
+      _optimisticJobIdByDocId.remove(transcription.docId);
       unawaited(_loadMarkdownFromDisk(transcription));
     }
 
@@ -216,18 +323,30 @@ class PageTranscriptionController extends ChangeNotifier {
 
   /// Enqueues an OCR transcription job for a document not yet in the queue.
   Future<void> enqueue(ScannedDocumentModel doc) async {
-    final payload = OcrJobPayload(
-      groupId: doc.groupId,
-      docId: doc.id,
-      relativePath: doc.relativePath,
-    );
+    final optimisticId = generateId();
+    _optimisticJobIdByDocId[doc.id] = optimisticId;
+    _ensureWatchingJob(doc.id);
+    notifyListeners();
 
-    await _jobDispatcher.dispatch(
-      id: generateId(),
-      payload: payload.toRawJson(),
-      groupKey: doc.groupId,
-      itemKey: doc.id,
-    );
+    try {
+      final payload = OcrJobPayload(
+        groupId: doc.groupId,
+        docId: doc.id,
+        relativePath: doc.relativePath,
+      );
+
+      await _jobDispatcher.dispatch(
+        id: optimisticId,
+        payload: payload.toRawJson(),
+        groupKey: doc.groupId,
+        itemKey: doc.id,
+        maxAttempts: 1,
+      );
+    } catch (_) {
+      _optimisticJobIdByDocId.remove(doc.id);
+      notifyListeners();
+      rethrow;
+    }
   }
 
   /// Retries / requeues a failed or dead-letter job, preserving any saved
@@ -236,10 +355,19 @@ class PageTranscriptionController extends ChangeNotifier {
     final existingJob = _latestJobByDocId[doc.id];
 
     if (existingJob != null) {
-      final requeued = await _jobDispatcher.retryDeadJob(existingJob.id);
+      _optimisticJobIdByDocId[doc.id] = existingJob.id;
+      notifyListeners();
 
-      if (requeued) {
-        return;
+      try {
+        final requeued = await _jobDispatcher.retryDeadJob(existingJob.id);
+
+        if (requeued) {
+          return;
+        }
+      } catch (_) {
+        _optimisticJobIdByDocId.remove(doc.id);
+        notifyListeners();
+        rethrow;
       }
     }
 
@@ -249,6 +377,8 @@ class PageTranscriptionController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+
+    FlutterForegroundTask.removeTaskDataCallback(_onTaskData);
 
     _transcriptionsSub?.cancel();
     _queuedSub?.cancel();
