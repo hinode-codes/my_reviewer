@@ -2,14 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:my_reviewer/src/shared/i18n/gen/strings.g.dart';
 import 'package:my_reviewer/src/shared/models/ai_model.dart';
 import 'package:my_reviewer/src/shared/models/artifact_download.dart';
 import 'package:my_reviewer/src/shared/models/task.dart';
 import 'package:my_reviewer/src/shared/services/ai_models/background_artifact_downloader.dart';
 import 'package:my_reviewer/src/shared/services/ai_models/i_artifact_downloader.dart';
-import 'package:my_reviewer/src/shared/services/notifications/i_job_notification_service.dart';
-import 'package:my_reviewer/src/shared/services/notifications/no_op_job_notification_service.dart';
 import 'package:my_reviewer/src/shared/services/storage/i_file_storage_service.dart';
 import 'package:my_reviewer/src/shared/utils/retry.dart';
 import 'package:path/path.dart' as p;
@@ -39,18 +36,25 @@ class AiModelProvisioner {
     required this._integrators,
     IArtifactDownloader? downloader,
     this._verifier = const ArtifactIntegrityVerifier(),
-    this._notifications = const NoopJobNotificationService(),
   }) : _downloader = downloader ?? BackgroundArtifactDownloader();
 
   final IFileStorageService _storageService;
   final List<IAiModelIntegrator> _integrators;
   final IArtifactDownloader _downloader;
   final ArtifactIntegrityVerifier _verifier;
-  final IJobNotificationService _notifications;
 
   static const String _verifiedMarkerFile = '.verified';
   static const String _integratedMarkerFile = '.integrated';
   static const int _maxTransientDownloadAttempts = 3;
+
+  /// Re-registers [spec] with its [IAiModelIntegrator] in the current isolate
+  /// when its artifacts are already verified on disk.
+  Future<void> reintegrateIfReady(AiModelSpec spec) async {
+    final dirPath = _resolveDirPath(spec);
+    if (!await File(p.join(dirPath, _verifiedMarkerFile)).exists()) return;
+
+    await _runIntegrator(spec, dirPath: dirPath);
+  }
 
   /// Inspects local storage and downloader task records to determine the
   /// current [AiModelStatus] for [spec].
@@ -165,7 +169,6 @@ class AiModelProvisioner {
       root: spec.storageRoot,
     );
     final dirPath = dir.path;
-    final notif = t.settings.main.notifications.download;
 
     try {
       onPhaseChanged?.call(ProvisionPhase.downloading);
@@ -179,28 +182,16 @@ class AiModelProvisioner {
 
       onPhaseChanged?.call(ProvisionPhase.verifying);
       onProgress?.call(const TaskProgress.processing(current: 0, total: 0));
-      await _notifications.showOrUpdate(
-        title: notif.setupTitle(name: spec.displayName),
-        body: notif.status.verifying,
-        current: 0,
-        total: 0,
-      );
+
       await _verifyArtifacts(spec, dirPath: dirPath);
 
       onPhaseChanged?.call(ProvisionPhase.integrating);
       onProgress?.call(const TaskProgress.processing(current: 0, total: 0));
-      await _notifications.showOrUpdate(
-        title: notif.setupTitle(name: spec.displayName),
-        body: notif.status.integrating,
-        current: 0,
-        total: 0,
-      );
+
       await _integrateArtifacts(spec, dirPath: dirPath);
 
       onProgress?.call(const TaskProgress.finishing());
-    } finally {
-      await _notifications.dismiss();
-    }
+    } finally {}
   }
 
   /// Cancels active downloader tasks, unintegrates [spec], and deletes all
@@ -225,7 +216,7 @@ class AiModelProvisioner {
     required TaskProgressCounter counter,
   }) async {
     final group = _groupFor(spec);
-    
+
     _downloader.configureGroupNotifications(
       group: group,
       displayName: spec.displayName,
@@ -328,6 +319,13 @@ class AiModelProvisioner {
     final integratedMarker = File(p.join(dirPath, _integratedMarkerFile));
     if (await integratedMarker.exists()) return;
 
+    await _runIntegrator(spec, dirPath: dirPath);
+  }
+
+  Future<void> _runIntegrator(
+    AiModelSpec spec, {
+    required String dirPath,
+  }) async {
     final resolvedPaths = <AiModelFileRole, String>{
       for (final artifact in spec.artifacts)
         artifact.role: p.join(dirPath, artifact.fileName),
@@ -341,10 +339,13 @@ class AiModelProvisioner {
 
     await integrator.integrate(spec, resolvedPaths);
 
-    await integratedMarker.writeAsString(
-      jsonEncode({'integratedAt': DateTime.now().toIso8601String()}),
-      flush: true,
-    );
+    final integratedMarker = File(p.join(dirPath, _integratedMarkerFile));
+    if (!await integratedMarker.exists()) {
+      await integratedMarker.writeAsString(
+        jsonEncode({'integratedAt': DateTime.now().toIso8601String()}),
+        flush: true,
+      );
+    }
   }
 
   bool _isArtifactComplete({

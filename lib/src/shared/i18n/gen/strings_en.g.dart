@@ -279,7 +279,8 @@ class Translations$jobs$transcription$en {
 	/// en: 'Transcribing documents'
 	String get title => 'Transcribing documents';
 
-	late final Translations$jobs$transcription$status$en status = Translations$jobs$transcription$status$en._(_root);
+	/// en: 'Turning scanned documents into readable text.'
+	String get message => 'Turning scanned documents into readable text.';
 }
 
 // Path: learn.main
@@ -616,27 +617,6 @@ class Translations$docs$transcription$stats$en {
 
 	/// en: 'Transcribed in {seconds: int}s'
 	String transcribeTime({required int seconds}) => 'Transcribed in ${seconds}s';
-}
-
-// Path: jobs.transcription.status
-class Translations$jobs$transcription$status$en {
-	Translations$jobs$transcription$status$en._(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Processing page transcription'
-	String get processing => 'Processing page transcription';
-
-	/// en: 'Resuming page transcription'
-	String get resuming => 'Resuming page transcription';
-
-	/// en: '(one) {Waiting to retry ({n} remaining)} (other) {Waiting to retry ({n} remaining)}'
-	String waitingToRetry({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: 'Waiting to retry (${n} remaining)',
-		other: 'Waiting to retry (${n} remaining)',
-	);
 }
 
 // Path: settings.main.model
@@ -1516,9 +1496,7 @@ extension on Translations {
 			'docs.transcription.stats.readTime' => ({required int seconds}) => '~${seconds}s read',
 			'docs.transcription.stats.transcribeTime' => ({required int seconds}) => 'Transcribed in ${seconds}s',
 			'jobs.transcription.title' => 'Transcribing documents',
-			'jobs.transcription.status.processing' => 'Processing page transcription',
-			'jobs.transcription.status.resuming' => 'Resuming page transcription',
-			'jobs.transcription.status.waitingToRetry' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Waiting to retry (${n} remaining)', other: 'Waiting to retry (${n} remaining)', ), 
+			'jobs.transcription.message' => 'Turning scanned documents into readable text.',
 			'learn.main.title' => _root.common.navigation.learn,
 			'settings.main.title' => _root.common.navigation.settings,
 			'settings.main.model.title' => 'Transcription Model',

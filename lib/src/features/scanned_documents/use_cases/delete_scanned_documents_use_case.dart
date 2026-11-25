@@ -4,7 +4,7 @@ import 'package:my_reviewer/src/features/scanned_documents/repositories/i_transc
 import 'package:my_reviewer/src/shared/models/deletion.dart';
 import 'package:my_reviewer/src/shared/models/task.dart';
 import 'package:my_reviewer/src/shared/models/use_case.dart';
-import 'package:my_reviewer/src/shared/services/jobs/i_job_dispatcher.dart';
+import 'package:my_reviewer/src/shared/repositories/jobs/i_job_write_repository.dart';
 
 import 'delete_scanned_group_use_case.dart';
 
@@ -20,14 +20,14 @@ class DeleteScannedDocumentsUseCase
     required this._readRepo,
     required this._writeRepo,
     required this._transcriptionWriteRepo,
-    required this._jobDispatcher,
+    required this._jobWriteRepo,
     required this._deleteGroup,
   });
 
   final IScannedDocumentReadRepository _readRepo;
   final IScannedDocumentWriteRepository _writeRepo;
   final ITranscriptionWriteRepository _transcriptionWriteRepo;
-  final IJobDispatcher _jobDispatcher;
+  final IJobWriteRepository _jobWriteRepo;
   final DeleteScannedGroupUseCase _deleteGroup;
 
   @override
@@ -50,7 +50,8 @@ class DeleteScannedDocumentsUseCase
     );
 
     counter.next();
-    await _jobDispatcher.cancelItems(documentIds.toSet());
+    // A running job notices the cancellation at its next checkpoint.
+    await _jobWriteRepo.cancelByItemKeys(documentIds.toSet());
 
     for (final id in documentIds) {
       counter.next();

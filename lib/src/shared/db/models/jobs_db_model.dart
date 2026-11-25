@@ -4,9 +4,12 @@ import 'package:my_reviewer/src/shared/db/models/id_metadata_mixin.dart';
 
 enum JobStatus { queued, running, succeeded, dead, cancelled }
 
-@TableIndex(name: 'idx_jobs_status_run_after', columns: {#status, #runAfter})
-@TableIndex(name: 'idx_jobs_group_key', columns: {#groupKey})
-@TableIndex(name: 'idx_jobs_item_key', columns: {#itemKey})
+@TableIndex(
+  name: 'jobs_runnable_idx',
+  columns: {#status, #runAfter, #createdAt},
+)
+@TableIndex(name: 'jobs_item_key_status_idx', columns: {#itemKey, #status})
+@TableIndex(name: 'jobs_group_key_status_idx', columns: {#groupKey, #status})
 class JobsDbModel extends Table with IdMetadataMixin, DateMetadataMixin {
   /// Optional logical bucket for batch cancellation (e.g., `groupId`).
   TextColumn get groupKey => text().nullable()();

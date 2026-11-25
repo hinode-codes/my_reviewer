@@ -11,7 +11,6 @@ import 'package:my_reviewer/src/shared/services/ai_models/ai_model_provisioner.d
 import 'package:my_reviewer/src/shared/services/ai_models/artifact_integrity_verifier.dart';
 import 'package:my_reviewer/src/shared/services/ai_models/i_ai_model_integrator.dart';
 import 'package:my_reviewer/src/shared/services/ai_models/i_artifact_downloader.dart';
-import 'package:my_reviewer/src/shared/services/notifications/i_job_notification_service.dart';
 import 'package:my_reviewer/src/shared/services/storage/i_file_storage_service.dart';
 import 'package:path/path.dart' as p;
 
@@ -20,7 +19,6 @@ void main() {
   late _FakeFileStorageService storageService;
   late _FakeArtifactDownloader downloader;
   late _FakeAiModelIntegrator integrator;
-  late _FakeJobNotificationService notifications;
   late AiModelProvisioner provisioner;
 
   String sha256Of(List<int> bytes) => sha256.convert(bytes).toString();
@@ -78,14 +76,12 @@ void main() {
     storageService = _FakeFileStorageService(tempRoot.path);
     downloader = _FakeArtifactDownloader();
     integrator = _FakeAiModelIntegrator();
-    notifications = _FakeJobNotificationService();
 
     provisioner = AiModelProvisioner(
       storageService: storageService,
       integrators: [integrator],
       downloader: downloader,
       verifier: const ArtifactIntegrityVerifier(),
-      notifications: notifications,
     );
   });
 
@@ -304,9 +300,6 @@ void main() {
         AiModelFileRole.mmproj: p.join(dirPath, 'mmproj.gguf'),
       });
 
-      expect(notifications.updates, hasLength(2));
-      expect(notifications.dismissCount, 1);
-
       final finalStatus = await provisioner.inspect(spec);
       expect(finalStatus.phase, AiModelInstallPhase.ready);
     });
@@ -439,7 +432,6 @@ void main() {
       );
 
       expect(attempts, 1);
-      expect(notifications.dismissCount, 1);
     });
 
     test('on SHA-256 mismatch deletes corrupted file and downloader record, then throws StateError', () async {
@@ -479,7 +471,6 @@ void main() {
       final file = File(p.join(modelDirPath(spec), 'model.gguf'));
       expect(await file.exists(), isFalse);
       expect(downloader.deletedTaskIds, contains('qwen-ocr__weights'));
-      expect(notifications.dismissCount, 1);
       expect(
         (await provisioner.inspect(spec)).phase,
         AiModelInstallPhase.notInstalled,
@@ -497,7 +488,6 @@ void main() {
 
       expect(downloader.requests, isEmpty);
       expect(integrator.integratedSpecs, isEmpty);
-      expect(notifications.dismissCount, 1);
     });
 
     test('throws StateError when no integrator supports spec and leaves status at verifiedUnintegrated', () async {
@@ -527,7 +517,6 @@ void main() {
 
       final status = await provisioner.inspect(spec);
       expect(status.phase, AiModelInstallPhase.verifiedUnintegrated);
-      expect(notifications.dismissCount, 1);
     });
   });
 
@@ -714,33 +703,4 @@ class _FakeAiModelIntegrator implements IAiModelIntegrator {
   Future<void> unintegrate(AiModelSpec spec) async {
     unintegratedSpecs.add(spec.id);
   }
-}
-
-class _FakeJobNotificationService implements IJobNotificationService {
-  final List<({String title, String body, int current, int total})> updates =
-      [];
-  int dismissCount = 0;
-
-  @override
-  Future<void> showOrUpdate({
-    required String title,
-    required String body,
-    int? current,
-    int? total,
-  }) async {
-    updates.add((
-      title: title,
-      body: body,
-      current: current ?? 0,
-      total: total ?? 0,
-    ));
-  }
-
-  @override
-  Future<void> dismiss() async {
-    dismissCount++;
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

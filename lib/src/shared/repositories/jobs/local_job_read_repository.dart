@@ -17,6 +17,11 @@ class LocalJobReadRepository implements IJobReadRepository {
       _mapper.maybeModel(await dao.getById(id));
 
   @override
+  Stream<List<JobModel>> watchByGroupKey(String groupKey) {
+    return dao.watchByGroupKey(groupKey).map(_mapper.models);
+  }
+
+  @override
   Future<JobModel?> getActiveByItemKey(String itemKey) async =>
       _mapper.maybeModel(await dao.getActiveByItemKey(itemKey));
 
@@ -38,4 +43,13 @@ class LocalJobReadRepository implements IJobReadRepository {
 
   @override
   Stream<List<JobModel>> watchDeadJobs() => watchByStatus(JobStatus.dead);
+
+  @override
+  Stream<DateTime?> watchNextRunAfter() => dao.watchNextRunAfter();
+
+  @override
+  Future<DateTime?> getNextRunAfter() => dao.getNextRunAfter();
+
+  @override
+  Future<int> countQueued() => dao.countQueued();
 }

@@ -2404,17 +2404,17 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $JobsDbModelTable jobsDbModel = $JobsDbModelTable(this);
   late final $ScannedDocumentGroupCountView scannedDocumentGroupCount =
       $ScannedDocumentGroupCountView(this);
-  late final Index idxJobsStatusRunAfter = Index(
-    'idx_jobs_status_run_after',
-    'CREATE INDEX idx_jobs_status_run_after ON jobs_db_model (status, run_after)',
+  late final Index jobsRunnableIdx = Index(
+    'jobs_runnable_idx',
+    'CREATE INDEX jobs_runnable_idx ON jobs_db_model (status, run_after, created_at)',
   );
-  late final Index idxJobsGroupKey = Index(
-    'idx_jobs_group_key',
-    'CREATE INDEX idx_jobs_group_key ON jobs_db_model (group_key)',
+  late final Index jobsItemKeyStatusIdx = Index(
+    'jobs_item_key_status_idx',
+    'CREATE INDEX jobs_item_key_status_idx ON jobs_db_model (item_key, status)',
   );
-  late final Index idxJobsItemKey = Index(
-    'idx_jobs_item_key',
-    'CREATE INDEX idx_jobs_item_key ON jobs_db_model (item_key)',
+  late final Index jobsGroupKeyStatusIdx = Index(
+    'jobs_group_key_status_idx',
+    'CREATE INDEX jobs_group_key_status_idx ON jobs_db_model (group_key, status)',
   );
   late final ScannedDocumentGroupsDao scannedDocumentGroupsDao =
       ScannedDocumentGroupsDao(this as AppDatabase);
@@ -2434,9 +2434,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     scannedDocumentTranscriptionsDbModel,
     jobsDbModel,
     scannedDocumentGroupCount,
-    idxJobsStatusRunAfter,
-    idxJobsGroupKey,
-    idxJobsItemKey,
+    jobsRunnableIdx,
+    jobsItemKeyStatusIdx,
+    jobsGroupKeyStatusIdx,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([

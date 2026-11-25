@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:my_reviewer/src/features/scanned_documents/models/ocr_job_payload.dart';
 import 'package:my_reviewer/src/features/scanned_documents/repositories/i_transcription_write_repository.dart';
 import 'package:my_reviewer/src/features/scanned_documents/services/i_local_ocr_engine.dart';
@@ -16,6 +17,7 @@ class OcrTranscriptionJobHandler implements IJobHandler {
     required this._ocrEngine,
     required this._transcriptionWriteRepo,
     this.checkpointEveryTokens = 10,
+    this.checkpointMinInterval = const Duration(seconds: 1),
     this.wordsPerMinute = 200,
     this.warmUpTimeout = const Duration(seconds: 10),
   });
@@ -25,15 +27,30 @@ class OcrTranscriptionJobHandler implements IJobHandler {
   final ITranscriptionWriteRepository _transcriptionWriteRepo;
 
   final int checkpointEveryTokens;
+
+  /// Minimum time between two checkpoints. Every checkpoint rewrites the full
+  /// partial text and re-runs every watcher on the jobs table, so token count
+  /// alone writes far too often on a fast engine. Keep it well under the stale
+  /// threshold, because each checkpoint also refreshes the heartbeat, and
+  /// remember that cancellation is only noticed at a checkpoint.
+  final Duration checkpointMinInterval;
   final int wordsPerMinute;
   final Duration warmUpTimeout;
 
   @override
   Future<void> execute(JobModel job, JobExecutionContext context) async {
+    if (kDebugMode) {
+      debugPrint("Calling execute() in OcrTranscriptionJobHandler");
+    }
+
     final payload = OcrJobPayload.fromRawJson(job.payload);
     final absoluteImagePath = _storageService.resolveAbsolutePath(
       payload.relativePath,
     );
+
+    if (kDebugMode) {
+      debugPrint("Before warmUp()");
+    }
 
     // Ensure Qwen-VL + mmproj + LoRA are loaded before starting the page timer.
     await _ocrEngine.warmUp().timeout(
@@ -44,8 +61,16 @@ class OcrTranscriptionJobHandler implements IJobHandler {
       ),
     );
 
+    if (kDebugMode) {
+      debugPrint("warmUp() has completed");
+    }
+
     // Refresh lease heartbeat and abort early if cancelled while loading model.
     if (!await context.checkpoint(elapsedMs: job.elapsedMs)) {
+      if (kDebugMode) {
+        debugPrint("Transcription has been canceled for ${job.id}");
+      }
+
       throw JobCancelledException(job.id);
     }
 
@@ -55,6 +80,7 @@ class OcrTranscriptionJobHandler implements IJobHandler {
     final stopwatch = Stopwatch()..start();
     final baseElapsedMs = job.elapsedMs;
     var chunksSinceCheckpoint = 0;
+    var lastCheckpointMs = 0;
 
     try {
       final rawStream = _ocrEngine.transcribeImage(
@@ -68,8 +94,11 @@ class OcrTranscriptionJobHandler implements IJobHandler {
         buffer.write(chunk);
         chunksSinceCheckpoint++;
 
-        if (chunksSinceCheckpoint >= checkpointEveryTokens) {
+        if (chunksSinceCheckpoint >= checkpointEveryTokens &&
+            stopwatch.elapsedMilliseconds - lastCheckpointMs >=
+                checkpointMinInterval.inMilliseconds) {
           chunksSinceCheckpoint = 0;
+          lastCheckpointMs = stopwatch.elapsedMilliseconds;
 
           final stillActive = await context.checkpoint(
             partialOutput: buffer.toString(),
@@ -92,12 +121,14 @@ class OcrTranscriptionJobHandler implements IJobHandler {
           elapsedMs: baseElapsedMs + stopwatch.elapsedMilliseconds,
         );
       }
+
       rethrow;
     } finally {
       stopwatch.stop();
     }
 
     final finalText = cleanOcrMarkdown(buffer.toString());
+
     if (finalText.trim().isEmpty) {
       throw StateError(
         'OCR inference completed with empty transcription output',

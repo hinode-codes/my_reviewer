@@ -5,7 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:my_reviewer/src/features/scanned_documents/controllers/docs_main_controller.dart';
 import 'package:my_reviewer/src/features/scanned_documents/controllers/group_controller.dart';
 import 'package:my_reviewer/src/features/scanned_documents/controllers/group_edit_controller.dart';
-import 'package:my_reviewer/src/features/scanned_documents/controllers/page_transcription_controller.dart';
+import 'package:my_reviewer/src/features/scanned_documents/controllers/page_transcription.dart';
 import 'package:my_reviewer/src/features/scanned_documents/controllers/page_viewer_controller.dart';
 import 'package:my_reviewer/src/features/scanned_documents/controllers/scan_controller.dart';
 import 'package:my_reviewer/src/features/scanned_documents/models/scanned_document_group_model.dart';
@@ -19,7 +19,7 @@ import 'package:my_reviewer/src/features/scanned_documents/screens/page_viewer_s
 import 'package:my_reviewer/src/features/scanned_documents/screens/scan_preview_screen.dart';
 import 'package:my_reviewer/src/features/settings/controllers/settings_controller.dart';
 import 'package:my_reviewer/src/features/settings/screens/settings_screen.dart';
-import 'package:my_reviewer/src/locator.dart';
+import 'package:my_reviewer/src/locators/main_locator.dart';
 import 'package:my_reviewer/src/shared/controllers/ai_model_selector_controller.dart';
 import 'package:provider/provider.dart';
 

@@ -36,6 +36,10 @@ class EdgeAiQwenOcrEngine implements ILocalOcrEngine {
   }
 
   Future<InferenceModel> _loadModelInternal() async {
+    if (kDebugMode) {
+      debugPrint("Calling _loadModelInternal() in EdgeAiQwenOcrEngine");
+    }
+
     try {
       final model = await FlutterEdgeAi.getActiveModel(
         maxTokens: maxTokens,
@@ -102,6 +106,12 @@ class EdgeAiQwenOcrEngine implements ILocalOcrEngine {
     required String absoluteImagePath,
     String? prefillText,
   }) async* {
+    if (kDebugMode) {
+      debugPrint(
+        "\n\nCalling transcribeImage() in EdgeAiQwenOcrEngine with image from \n\n $absoluteImagePath\n\n",
+      );
+    }
+
     final imageFile = File(absoluteImagePath);
 
     if (!await imageFile.exists()) {
@@ -112,18 +122,31 @@ class EdgeAiQwenOcrEngine implements ILocalOcrEngine {
     }
 
     final sw = Stopwatch()..start();
+
     final model = await _getOrLoadModel();
-    debugPrint('[OCR] CPU model ready in ${sw.elapsedMilliseconds}ms');
+
+    if (kDebugMode) {
+      debugPrint('[OCR] CPU model ready in ${sw.elapsedMilliseconds}ms');
+      debugPrint("Opening session...");
+    }
 
     final session = await model.openSession();
-    var timedOut = false;
+
+    if (kDebugMode) {
+      debugPrint("Session has been opened!");
+    }
 
     try {
       {
         final imageBytes = await _prepareImageBytes(imageFile);
-        debugPrint(
-          '[OCR] Image prepared (${imageBytes.length ~/ 1024} KB) at ${sw.elapsedMilliseconds}ms',
-        );
+
+        if (kDebugMode) {
+          debugPrint(
+            '\n[OCR] Image prepared (${imageBytes.length ~/ 1024} KB) at ${sw.elapsedMilliseconds}ms',
+          );
+
+          debugPrint("Adding query chunk...\n");
+        }
 
         await session.addQueryChunk(
           Message.withImage(
@@ -135,6 +158,11 @@ class EdgeAiQwenOcrEngine implements ILocalOcrEngine {
       }
 
       var receivedFirstChunk = false;
+
+      if (kDebugMode) {
+        debugPrint("\nInit getResponseAsync() in session...");
+      }
+
       final stream = session.getResponseAsync().timeout(
         firstTokenTimeout,
         onTimeout: (sink) {
@@ -150,25 +178,26 @@ class EdgeAiQwenOcrEngine implements ILocalOcrEngine {
       );
 
       await for (final chunk in stream) {
+        if (kDebugMode) {
+          debugPrint("\nReceived chunk!\n\t$chunk\n");
+        }
+
         if (chunk.isNotEmpty) {
           if (!receivedFirstChunk) {
             receivedFirstChunk = true;
+
             debugPrint('[OCR] First token at ${sw.elapsedMilliseconds}ms');
           }
+
           yield chunk;
         }
       }
 
       debugPrint('[OCR] Completed in ${sw.elapsedMilliseconds}ms');
-    } on TimeoutException {
-      timedOut = true;
+    } catch (error) {
       rethrow;
     } finally {
-      if (timedOut) {
-        unawaited(
-          session.close().timeout(const Duration(seconds: 2), onTimeout: () {}),
-        );
-      } else {
+      if (_model != null && !model.isClosed) {
         await session.close();
       }
     }
@@ -181,6 +210,14 @@ class EdgeAiQwenOcrEngine implements ILocalOcrEngine {
 
   @override
   Future<void> dispose() async {
+    final inFlight = _loadingFuture;
+
+    if (inFlight != null) {
+      try {
+        await inFlight;
+      } catch (_) {}
+    }
+
     final model = _model;
     _model = null;
 

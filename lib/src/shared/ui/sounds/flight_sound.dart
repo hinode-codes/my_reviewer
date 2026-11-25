@@ -1,5 +1,5 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:my_reviewer/src/locator.dart';
+import 'package:my_reviewer/src/locators/main_locator.dart';
 import 'package:my_reviewer/src/shared/models/sound.dart';
 import 'package:my_reviewer/src/shared/services/sound/i_sound_service.dart';
 

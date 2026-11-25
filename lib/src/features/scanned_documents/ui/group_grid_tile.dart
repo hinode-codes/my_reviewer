@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:my_reviewer/src/features/scanned_documents/constants/ui_constants.dart';
 import 'package:my_reviewer/src/features/scanned_documents/models/scanned_document_group_model.dart';
 import 'package:my_reviewer/src/features/scanned_documents/utils/hero_tags.dart';
-import 'package:my_reviewer/src/locator.dart';
+import 'package:my_reviewer/src/locators/main_locator.dart';
 import 'package:my_reviewer/src/routes.dart';
 import 'package:my_reviewer/src/shared/constants/stack_constants.dart';
 import 'package:my_reviewer/src/shared/constants/ui_constants.dart';

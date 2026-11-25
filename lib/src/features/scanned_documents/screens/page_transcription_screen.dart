@@ -2,7 +2,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:my_reviewer/src/features/scanned_documents/controllers/page_transcription_controller.dart';
+import 'package:my_reviewer/src/features/scanned_documents/controllers/page_transcription.dart';
 import 'package:my_reviewer/src/features/scanned_documents/controllers/page_viewer_controller.dart';
 import 'package:my_reviewer/src/features/scanned_documents/models/page_transcription_state.dart';
 import 'package:my_reviewer/src/features/scanned_documents/models/scanned_document_model.dart';

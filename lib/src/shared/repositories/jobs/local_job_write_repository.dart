@@ -59,25 +59,32 @@ class LocalJobWriteRepository implements IJobWriteRepository {
   }) {
     return db.transaction(() async {
       final now = DateTime.now();
-      final staleRows = await dao.getStaleRunning(now.subtract(staleThreshold));
+      final heartbeatCutoff = now.subtract(staleThreshold);
 
-      for (final row in staleRows) {
-        final exhausted = row.attempts >= row.maxAttempts;
-
-        await dao.updateJobWhereStatus(
-          row.id,
-          currentStatuses: const [JobStatus.running],
-          changes: JobsDbModelCompanion(
-            status: Value(exhausted ? JobStatus.dead : JobStatus.queued),
-            heartbeatAt: const Value(null),
-            runAfter: Value(now),
-            lastError: Value(crashReason),
-            updatedAt: Value(now),
-          ),
+      // Same outcome per row as before (attempts >= maxAttempts -> dead,
+      // otherwise back to queued), but as two bulk UPDATEs instead of one
+      // SELECT plus one UPDATE per stale row. The two conditions are
+      // disjoint, and both only touch rows that are still running.
+      JobsDbModelCompanion changesFor(JobStatus status) {
+        return JobsDbModelCompanion(
+          status: Value(status),
+          heartbeatAt: const Value(null),
+          runAfter: Value(now),
+          lastError: Value(crashReason),
+          updatedAt: Value(now),
         );
       }
 
-      return staleRows.length;
+      final exhaustedCount = await dao.updateStaleRunningExhausted(
+        heartbeatCutoff,
+        changesFor(JobStatus.dead),
+      );
+      final requeuedCount = await dao.updateStaleRunningRetryable(
+        heartbeatCutoff,
+        changesFor(JobStatus.queued),
+      );
+
+      return exhaustedCount + requeuedCount;
     });
   }
 
@@ -183,6 +190,7 @@ class LocalJobWriteRepository implements IJobWriteRepository {
         jobId,
         currentStatuses: const [JobStatus.running],
         changes: JobsDbModelCompanion(
+          attempts: Value(row.attempts + 1),
           status: Value(nextStatus),
           heartbeatAt: const Value(null),
           runAfter: Value(

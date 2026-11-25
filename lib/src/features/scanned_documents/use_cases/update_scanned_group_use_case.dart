@@ -4,10 +4,12 @@ import 'package:my_reviewer/src/features/scanned_documents/models/scanned_docume
 import 'package:my_reviewer/src/features/scanned_documents/repositories/i_scanned_document_read_repository.dart';
 import 'package:my_reviewer/src/features/scanned_documents/repositories/i_scanned_document_write_repository.dart';
 import 'package:my_reviewer/src/features/scanned_documents/repositories/i_transcription_write_repository.dart';
-import 'package:my_reviewer/src/shared/models/job_dispatch_request.dart';
+import 'package:my_reviewer/src/locators/main_locator.dart';
 import 'package:my_reviewer/src/shared/models/task.dart';
 import 'package:my_reviewer/src/shared/models/use_case.dart';
-import 'package:my_reviewer/src/shared/services/jobs/i_job_dispatcher.dart';
+import 'package:my_reviewer/src/shared/repositories/jobs/i_job_write_repository.dart';
+import 'package:my_reviewer/src/shared/services/foreground_tasks/foreground_task_commander.dart';
+import 'package:my_reviewer/src/shared/services/foreground_tasks/foreground_task_type.dart';
 import 'package:my_reviewer/src/shared/utils/strings.dart';
 
 typedef UpdateScannedGroupParams = ({
@@ -23,13 +25,13 @@ class UpdateScannedGroupUseCase
     required this._readRepo,
     required this._writeRepo,
     required this._transcriptionWriteRepo,
-    required this._jobDispatcher,
+    required this._jobWriteRepo,
   });
 
   final IScannedDocumentReadRepository _readRepo;
   final IScannedDocumentWriteRepository _writeRepo;
   final ITranscriptionWriteRepository _transcriptionWriteRepo;
-  final IJobDispatcher _jobDispatcher;
+  final IJobWriteRepository _jobWriteRepo;
 
   @override
   Future<void> call(
@@ -46,7 +48,7 @@ class UpdateScannedGroupUseCase
     };
 
     if (removedIds.isNotEmpty) {
-      await _jobDispatcher.cancelItems(removedIds);
+      await _jobWriteRepo.cancelByItemKeys(removedIds);
     }
 
     final deletedIds = await _writeRepo.updateScannedDocumentGroup(
@@ -68,20 +70,22 @@ class UpdateScannedGroupUseCase
           .toList();
 
       if (newlyCreatedDocs.isNotEmpty) {
-        await _jobDispatcher.dispatchAll([
-          for (final doc in newlyCreatedDocs)
-            JobDispatchRequest(
-              id: generateId(),
-              groupKey: groupId,
-              itemKey: doc.id,
-              payload: OcrJobPayload(
-                docId: doc.id,
-                groupId: groupId,
-                relativePath: doc.relativePath,
-                ext: 'md',
-              ).toRawJson(),
-            ),
-        ]);
+        for (final doc in newlyCreatedDocs) {
+          await _jobWriteRepo.enqueue(
+            id: generateId(),
+            payload: OcrJobPayload(
+              docId: doc.id,
+              groupId: doc.groupId,
+              relativePath: doc.relativePath,
+            ).toRawJson(),
+            groupKey: doc.groupId,
+            itemKey: doc.id,
+            maxAttempts: 3,
+            deduplicateActiveByItemKey: true,
+          );
+        }
+
+        getIt<ForegroundTaskCommander>().start(ForegroundTaskType.ocr);
       }
     }
   }
